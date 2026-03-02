@@ -486,14 +486,16 @@ export default function TransomCalculator() {
   const [selectedShape, setSelectedShape] = useState("raked");
 
   // ── Onboarding tutorial state ──
-  const [showTutorial, setShowTutorial] = useState(() => {
-    try { return localStorage.getItem("titanpour_tutorial_done") !== "1"; } catch { return true; }
-  });
+  const [showTutorial, setShowTutorial] = useState(true);
   const [tutorialStep, setTutorialStep] = useState(0);
 
   const closeTutorial = useCallback(() => {
     setShowTutorial(false);
-    try { localStorage.setItem("titanpour_tutorial_done", "1"); } catch {}
+  }, []);
+
+  const reopenTutorial = useCallback(() => {
+    setTutorialStep(0);
+    setShowTutorial(true);
   }, []);
 
   const handleTutorialNext = useCallback(() => {
@@ -847,13 +849,25 @@ export default function TransomCalculator() {
 
       <div style={{ maxWidth: 900, margin: "0 auto" }}>
         {/* Header */}
-        <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: "#f59e0b", margin: 0, letterSpacing: "-0.5px" }}>
-            TitanPour &mdash; Transom Engineering Calculator
-          </h1>
-          <p style={{ color: "#64748b", fontSize: 13, margin: "4px 0 0" }}>
-            Pourable composite transom system &middot; Shape reference &middot; Area &amp; weight &middot; Rod spacing &middot; Live weather &middot; Job summary
-          </p>
+        <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+          <div>
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: "#f59e0b", margin: 0, letterSpacing: "-0.5px" }}>
+              TitanPour &mdash; Transom Engineering Calculator
+            </h1>
+            <p style={{ color: "#64748b", fontSize: 13, margin: "4px 0 0" }}>
+              Pourable composite transom system &middot; Shape reference &middot; Area &amp; weight &middot; Rod spacing &middot; Live weather &middot; Job summary
+            </p>
+          </div>
+          <button
+            onClick={reopenTutorial}
+            style={{
+              background: "#1e293b", border: "1px solid #334155", borderRadius: 8,
+              color: "#94a3b8", padding: "6px 14px", fontSize: 12, cursor: "pointer",
+              whiteSpace: "nowrap", flexShrink: 0,
+            }}
+          >
+            ? Tutorial
+          </button>
         </div>
 
         {/* Tabs */}
