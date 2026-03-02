@@ -101,6 +101,67 @@ const RAIN_CODES = new Set([51,53,55,56,57,61,63,65,66,67,80,81,82,85,86,95,96,9
 const REFRESH_INTERVAL = 10 * 60 * 1000; // 10 minutes
 
 // ═══════════════════════════════════════════
+// ONBOARDING TUTORIAL STEPS
+// ═══════════════════════════════════════════
+
+const TUTORIAL_STEPS = [
+  {
+    title: "Welcome to TitanPour",
+    subtitle: "Transom Engineering Calculator",
+    body: "This tool helps you plan and calculate everything needed for a pourable composite transom job — from shape selection and material quantities to reinforcement rods and live weather conditions for curing.",
+    icon: "rocket",
+    accent: "#f59e0b",
+  },
+  {
+    title: "1. Choose Your Transom Shape",
+    subtitle: "Transom Shapes tab",
+    body: "Start by selecting the type of transom you're working on. Each shape shows typical rake angles, advantages, and trade-offs. This sets the foundation for all your calculations.",
+    icon: "shapes",
+    accent: "#f59e0b",
+    tab: "shapes",
+  },
+  {
+    title: "2. Calculate Area & Weight",
+    subtitle: "Area & Weight tab",
+    body: "Enter your transom dimensions (width, height, rake angle, thickness) and select your material. Choose an engine configuration to account for cutouts. The calculator handles all slope conversions automatically and shows net resin volume with wastage.",
+    icon: "calc",
+    accent: "#22c55e",
+    tab: "calc",
+  },
+  {
+    title: "3. Plan Your Rod Grid",
+    subtitle: "Rod Spacing tab",
+    body: "Set the reinforcement rod spacing and diameter. The calculator works out how many rods you need, their cut lengths (accounting for the slope), and the total rod length to order. A face-on preview shows the grid layout.",
+    icon: "grid",
+    accent: "#3b82f6",
+    tab: "rods",
+  },
+  {
+    title: "4. Check Live Weather",
+    subtitle: "Live Weather tab",
+    body: "Search any location worldwide to get real-time temperature, humidity, and dew point — all critical for resin cure. The system gives a GO / CAUTION / NO-GO verdict, finds the best layup window, and shows a 7-day outlook. Data refreshes every 10 minutes.",
+    icon: "weather",
+    accent: "#f59e0b",
+    tab: "temp",
+  },
+  {
+    title: "5. Review Your Job Summary",
+    subtitle: "Job Summary tab",
+    body: "Everything in one place — transom specs, engine config, areas, resin order quantities, rod requirements, and current weather verdict. Use this as your job sheet before you start the pour.",
+    icon: "summary",
+    accent: "#f59e0b",
+    tab: "summary",
+  },
+  {
+    title: "Safety First",
+    subtitle: "Important",
+    body: "This calculator provides estimates for planning and ordering. All calculations must be verified by a qualified marine engineer before construction. Boat transoms are safety-critical — always cross-check against the product data sheet, engine mounting specs, and ISO 12215.",
+    icon: "safety",
+    accent: "#ef4444",
+  },
+];
+
+// ═══════════════════════════════════════════
 // API HELPERS
 // ═══════════════════════════════════════════
 
@@ -267,12 +328,185 @@ function ResultBox({ label, value, unit, highlight }) {
 }
 
 // ═══════════════════════════════════════════
+// ONBOARDING OVERLAY
+// ═══════════════════════════════════════════
+
+function TutorialIcon({ icon, size = 48 }) {
+  const s = { width: size, height: size };
+  if (icon === "rocket") return (
+    <svg viewBox="0 0 48 48" style={s}><path d="M24 4C24 4 10 16 10 32l6 4 8-8 8 8 6-4C38 16 24 4 24 4z" fill="#f59e0b" opacity="0.9"/><circle cx="24" cy="20" r="4" fill="#020617"/><path d="M10 32l-4 8 8-4M38 32l4 8-8-4" fill="#f59e0b" opacity="0.6"/></svg>
+  );
+  if (icon === "shapes") return (
+    <svg viewBox="0 0 48 48" style={s}><polygon points="24,6 42,38 6,38" fill="none" stroke="#f59e0b" strokeWidth="2.5"/><line x1="24" y1="6" x2="24" y2="38" stroke="#f59e0b" strokeWidth="1" strokeDasharray="3,2" opacity="0.5"/></svg>
+  );
+  if (icon === "calc") return (
+    <svg viewBox="0 0 48 48" style={s}><rect x="8" y="6" width="32" height="36" rx="4" fill="none" stroke="#22c55e" strokeWidth="2.5"/><rect x="14" y="12" width="20" height="8" rx="2" fill="#22c55e" opacity="0.3"/><circle cx="18" cy="28" r="2" fill="#22c55e"/><circle cx="30" cy="28" r="2" fill="#22c55e"/><circle cx="18" cy="36" r="2" fill="#22c55e"/><circle cx="30" cy="36" r="2" fill="#22c55e"/></svg>
+  );
+  if (icon === "grid") return (
+    <svg viewBox="0 0 48 48" style={s}><rect x="6" y="6" width="36" height="36" fill="none" stroke="#3b82f6" strokeWidth="2"/>{[18,30].map(x=><line key={`v${x}`} x1={x} y1="6" x2={x} y2="42" stroke="#3b82f6" strokeWidth="1.5" opacity="0.6"/>)}{[18,30].map(y=><line key={`h${y}`} x1="6" y1={y} x2="42" y2={y} stroke="#f59e0b" strokeWidth="1.5" opacity="0.6"/>)}</svg>
+  );
+  if (icon === "weather") return (
+    <svg viewBox="0 0 48 48" style={s}><circle cx="20" cy="20" r="8" fill="#f59e0b" opacity="0.8"/>{[[20,4],[20,36],[4,20],[36,20],[9,9],[31,9],[9,31],[31,31]].map(([x,y],i)=><circle key={i} cx={x} cy={y} r="1.5" fill="#f59e0b" opacity="0.4"/>)}<path d="M28 30a8 8 0 0 1-16 0 6 6 0 0 1 0-12 8 8 0 0 1 16 0z" fill="#94a3b8" opacity="0.4" transform="translate(6,4)"/></svg>
+  );
+  if (icon === "summary") return (
+    <svg viewBox="0 0 48 48" style={s}><rect x="10" y="4" width="28" height="40" rx="3" fill="none" stroke="#f59e0b" strokeWidth="2"/><line x1="16" y1="14" x2="32" y2="14" stroke="#f59e0b" strokeWidth="2" opacity="0.6"/><line x1="16" y1="22" x2="32" y2="22" stroke="#94a3b8" strokeWidth="1.5" opacity="0.4"/><line x1="16" y1="28" x2="28" y2="28" stroke="#94a3b8" strokeWidth="1.5" opacity="0.4"/><line x1="16" y1="34" x2="30" y2="34" stroke="#94a3b8" strokeWidth="1.5" opacity="0.4"/></svg>
+  );
+  if (icon === "safety") return (
+    <svg viewBox="0 0 48 48" style={s}><path d="M24 4L6 14v12c0 11 8 18 18 22 10-4 18-11 18-22V14L24 4z" fill="none" stroke="#ef4444" strokeWidth="2.5"/><text x="24" y="32" textAnchor="middle" fill="#ef4444" fontSize="22" fontWeight="800">!</text></svg>
+  );
+  return null;
+}
+
+function OnboardingOverlay({ step, totalSteps, onNext, onPrev, onSkip, onFinish }) {
+  const data = TUTORIAL_STEPS[step];
+  const isFirst = step === 0;
+  const isLast = step === totalSteps - 1;
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 9999,
+      background: "rgba(2, 6, 23, 0.92)", backdropFilter: "blur(8px)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: 20, animation: "tutorialFadeIn 0.3s ease-out",
+    }}>
+      <style>{`
+        @keyframes tutorialFadeIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+        @keyframes tutorialSlide { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+      `}</style>
+      <div style={{
+        background: "#0f172a", border: `1px solid ${data.accent}40`,
+        borderRadius: 16, maxWidth: 520, width: "100%",
+        boxShadow: `0 0 60px ${data.accent}15, 0 25px 50px rgba(0,0,0,0.5)`,
+        animation: "tutorialSlide 0.35s ease-out",
+        overflow: "hidden",
+      }}>
+        {/* Progress bar */}
+        <div style={{ height: 3, background: "#1e293b" }}>
+          <div style={{
+            height: "100%", background: data.accent,
+            width: `${((step + 1) / totalSteps) * 100}%`,
+            transition: "width 0.4s ease",
+          }} />
+        </div>
+
+        <div style={{ padding: "32px 32px 24px" }}>
+          {/* Icon */}
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+            <div style={{
+              background: `${data.accent}12`, border: `1px solid ${data.accent}30`,
+              borderRadius: 16, padding: 16, display: "inline-flex",
+            }}>
+              <TutorialIcon icon={data.icon} size={56} />
+            </div>
+          </div>
+
+          {/* Step counter */}
+          <div style={{ textAlign: "center", marginBottom: 8 }}>
+            <span style={{
+              color: data.accent, fontSize: 11, fontWeight: 700,
+              background: `${data.accent}15`, padding: "3px 10px", borderRadius: 20,
+              textTransform: "uppercase", letterSpacing: "0.5px",
+            }}>
+              {isFirst ? "Getting Started" : isLast ? "One More Thing" : `Step ${step} of ${totalSteps - 2}`}
+            </span>
+          </div>
+
+          {/* Title */}
+          <h2 style={{
+            color: "#e2e8f0", fontSize: 22, fontWeight: 800,
+            textAlign: "center", margin: "12px 0 4px", letterSpacing: "-0.3px",
+          }}>
+            {data.title}
+          </h2>
+
+          {/* Subtitle */}
+          <div style={{ color: data.accent, fontSize: 13, textAlign: "center", fontWeight: 600, marginBottom: 16 }}>
+            {data.subtitle}
+          </div>
+
+          {/* Body */}
+          <p style={{
+            color: "#94a3b8", fontSize: 14, lineHeight: 1.7,
+            textAlign: "center", margin: "0 0 28px",
+          }}>
+            {data.body}
+          </p>
+
+          {/* Dot indicators */}
+          <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 24 }}>
+            {TUTORIAL_STEPS.map((_, i) => (
+              <div key={i} style={{
+                width: i === step ? 20 : 6, height: 6, borderRadius: 3,
+                background: i === step ? data.accent : "#334155",
+                transition: "all 0.3s ease",
+              }} />
+            ))}
+          </div>
+
+          {/* Buttons */}
+          <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+            {!isFirst && (
+              <button onClick={onPrev} style={{
+                background: "#1e293b", border: "1px solid #334155", borderRadius: 8,
+                color: "#94a3b8", padding: "10px 20px", fontSize: 13,
+                cursor: "pointer", fontWeight: 600,
+              }}>
+                Back
+              </button>
+            )}
+            {isFirst && (
+              <button onClick={onSkip} style={{
+                background: "transparent", border: "1px solid #334155", borderRadius: 8,
+                color: "#64748b", padding: "10px 20px", fontSize: 13,
+                cursor: "pointer",
+              }}>
+                Skip tutorial
+              </button>
+            )}
+            <button onClick={isLast ? onFinish : onNext} style={{
+              background: data.accent, border: "none", borderRadius: 8,
+              color: "#020617", padding: "10px 28px", fontSize: 14,
+              cursor: "pointer", fontWeight: 700,
+            }}>
+              {isLast ? "Start Building" : isFirst ? "Show Me Around" : "Next"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════
 
 export default function TransomCalculator() {
   const [tab, setTab] = useState("shapes");
   const [selectedShape, setSelectedShape] = useState("raked");
+
+  // ── Onboarding tutorial state ──
+  const [showTutorial, setShowTutorial] = useState(() => {
+    try { return localStorage.getItem("titanpour_tutorial_done") !== "1"; } catch { return true; }
+  });
+  const [tutorialStep, setTutorialStep] = useState(0);
+
+  const closeTutorial = useCallback(() => {
+    setShowTutorial(false);
+    try { localStorage.setItem("titanpour_tutorial_done", "1"); } catch {}
+  }, []);
+
+  const handleTutorialNext = useCallback(() => {
+    const nextStep = tutorialStep + 1;
+    setTutorialStep(nextStep);
+    if (TUTORIAL_STEPS[nextStep]?.tab) setTab(TUTORIAL_STEPS[nextStep].tab);
+  }, [tutorialStep]);
+
+  const handleTutorialPrev = useCallback(() => {
+    const prevStep = tutorialStep - 1;
+    setTutorialStep(prevStep);
+    if (TUTORIAL_STEPS[prevStep]?.tab) setTab(TUTORIAL_STEPS[prevStep].tab);
+  }, [tutorialStep]);
 
   // Area calculator state
   const [transomWidth, setTransomWidth] = useState(1800);
@@ -599,6 +833,18 @@ export default function TransomCalculator() {
       fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
       background: "#020617", color: "#e2e8f0", minHeight: "100vh", padding: "24px 16px",
     }}>
+      {/* ═══ ONBOARDING TUTORIAL ═══ */}
+      {showTutorial && (
+        <OnboardingOverlay
+          step={tutorialStep}
+          totalSteps={TUTORIAL_STEPS.length}
+          onNext={handleTutorialNext}
+          onPrev={handleTutorialPrev}
+          onSkip={closeTutorial}
+          onFinish={closeTutorial}
+        />
+      )}
+
       <div style={{ maxWidth: 900, margin: "0 auto" }}>
         {/* Header */}
         <div style={{ marginBottom: 24 }}>
