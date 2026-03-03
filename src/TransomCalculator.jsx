@@ -115,7 +115,7 @@ const TUTORIAL_STEPS = [
   {
     title: "5. Check Live Weather",
     subtitle: "Live Weather tab",
-    body: "Search any location worldwide to get real-time temperature, humidity, and dew point — all critical for resin cure. The system gives a GO / CAUTION / NO-GO verdict, finds the best layup window, and shows a 7-day outlook. Data refreshes every 10 minutes.",
+    body: "Search any location worldwide to get real-time temperature, humidity, and dew point — all critical for resin cure. The system gives a GO / CAUTION / NO-GO verdict, finds the best layup window, and shows a 3-week outlook. Data refreshes every 10 minutes.",
     icon: "weather",
     accent: "#f59e0b",
     tab: "temp",
@@ -152,15 +152,44 @@ async function searchLocations(query) {
 }
 
 async function fetchForecast(lat, lon) {
-  const res = await fetch(
+  // Standard API: current conditions + hourly (today) + daily up to 16 days
+  const stdRes = await fetch(
     `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
     `&current=temperature_2m,relative_humidity_2m,dew_point_2m,wind_speed_10m,apparent_temperature,weather_code` +
     `&hourly=temperature_2m,relative_humidity_2m,dew_point_2m` +
     `&daily=temperature_2m_max,temperature_2m_min,weather_code` +
-    `&timezone=auto&forecast_days=7`
+    `&timezone=auto&forecast_days=16`
   );
-  if (!res.ok) throw new Error("Forecast fetch failed");
-  return await res.json();
+  if (!stdRes.ok) throw new Error("Forecast fetch failed");
+  const stdData = await stdRes.json();
+
+  // Ensemble API: extended daily forecast up to 21 days (for days 17-21)
+  try {
+    const ensRes = await fetch(
+      `https://ensemble-api.open-meteo.com/v1/ensemble?latitude=${lat}&longitude=${lon}` +
+      `&daily=temperature_2m_max,temperature_2m_min,weather_code` +
+      `&timezone=auto&forecast_days=21`
+    );
+    if (ensRes.ok) {
+      const ensData = await ensRes.json();
+      if (ensData.daily?.time) {
+        // Merge: use standard data for the first 16 days, ensemble for days beyond
+        const stdDates = new Set(stdData.daily.time);
+        ensData.daily.time.forEach((date, i) => {
+          if (!stdDates.has(date)) {
+            stdData.daily.time.push(date);
+            stdData.daily.temperature_2m_max.push(ensData.daily.temperature_2m_max[i]);
+            stdData.daily.temperature_2m_min.push(ensData.daily.temperature_2m_min[i]);
+            stdData.daily.weather_code.push(ensData.daily.weather_code?.[i] ?? 0);
+          }
+        });
+      }
+    }
+  } catch {
+    // Ensemble failed — continue with 16-day standard data
+  }
+
+  return stdData;
 }
 
 // ═══════════════════════════════════════════
@@ -849,14 +878,40 @@ export default function TransomCalculator() {
     });
   }, [forecastData]);
 
-  // ── Best day this week ──
-  const bestDay = useMemo(() => {
-    if (dailyForecast.length === 0) return null;
-    // Best = highest high temp, not raining
-    const nonRainy = dailyForecast.filter(d => !RAIN_CODES.has(d.weatherCode));
-    if (nonRainy.length === 0) return null;
-    return nonRainy.reduce((best, d) => d.high > best.high ? d : best, nonRainy[0]);
+  // ── Best pour days (ranked across full forecast) ──
+  const bestPourDays = useMemo(() => {
+    if (dailyForecast.length === 0) return [];
+    // Score each day: higher = better for pouring
+    // Ideal: warm (18-25°C high), dry, not too cold overnight
+    return dailyForecast
+      .map((d, idx) => {
+        let score = 0;
+        // Rain = disqualified
+        if (RAIN_CODES.has(d.weatherCode)) return { ...d, idx, score: -1, reason: "Rain expected" };
+        // Temperature scoring (high temp)
+        if (d.high >= 18 && d.high <= 26) score += 50; // ideal range
+        else if (d.high >= 15 && d.high < 18) score += 30; // workable
+        else if (d.high > 26 && d.high <= 30) score += 25; // warm but ok
+        else if (d.high >= 10 && d.high < 15) score += 10; // cold, slow cure
+        else score -= 20; // too cold or too hot
+        // Overnight low matters for cure completion
+        if (d.low >= 12) score += 20;
+        else if (d.low >= 8) score += 10;
+        else if (d.low >= 5) score += 0;
+        else score -= 15; // frost risk
+        // Prefer days sooner rather than later (less forecast uncertainty)
+        score -= idx * 0.5;
+        const reason = d.high >= 18 && d.high <= 26 ? "Ideal temp range" :
+                       d.high >= 15 ? "Workable" : d.high >= 10 ? "Cold — slow hardener needed" : "Too cold";
+        return { ...d, idx, score, reason };
+      })
+      .filter(d => d.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5); // top 5 days
   }, [dailyForecast]);
+
+  // Keep bestDay for backward compat in weather tab display
+  const bestDay = bestPourDays.length > 0 ? bestPourDays[0] : null;
 
   // ── Engine config handler ──
   const handleEngineConfig = useCallback((configId) => {
@@ -1635,11 +1690,56 @@ export default function TransomCalculator() {
               </div>
             )}
 
-            {/* ── 7-DAY OUTLOOK ── */}
+            {/* ── RECOMMENDED POUR DAYS ── */}
+            {bestPourDays.length > 0 && (
+              <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #22c55e40", marginBottom: 16 }}>
+                <h3 style={{ color: "#22c55e", fontSize: 14, margin: "0 0 4px", fontWeight: 700 }}>RECOMMENDED POUR DAYS</h3>
+                <div style={{ color: "#64748b", fontSize: 12, marginBottom: 14 }}>
+                  Top {bestPourDays.length} days ranked by temperature, conditions, and forecast confidence
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {bestPourDays.map((d, i) => (
+                    <div key={d.date} style={{
+                      display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
+                      background: i === 0 ? "#22c55e10" : "#1e293b",
+                      border: i === 0 ? "1px solid #22c55e40" : "1px solid #334155",
+                      borderRadius: 8,
+                    }}>
+                      <div style={{
+                        width: 28, height: 28, borderRadius: "50%", display: "flex",
+                        alignItems: "center", justifyContent: "center",
+                        background: i === 0 ? "#22c55e" : "#334155",
+                        color: i === 0 ? "#020617" : "#94a3b8",
+                        fontSize: 13, fontWeight: 800,
+                      }}>
+                        {i + 1}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ color: "#e2e8f0", fontSize: 14, fontWeight: 600 }}>
+                          {d.dayName} {d.dayNum} {d.month}
+                          {i === 0 && <span style={{ color: "#22c55e", fontSize: 11, marginLeft: 8 }}>BEST</span>}
+                        </div>
+                        <div style={{ color: "#94a3b8", fontSize: 12 }}>
+                          {d.high.toFixed(0)}&deg;C high / {d.low.toFixed(0)}&deg;C low &middot; {d.weather} &middot; {d.reason}
+                        </div>
+                      </div>
+                      <div style={{
+                        background: `${d.verdict.color}20`, color: d.verdict.color,
+                        fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 4,
+                      }}>
+                        {d.verdict.label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── 3-WEEK OUTLOOK ── */}
             {dailyForecast.length > 0 && (
               <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
-                  <h3 style={{ color: "#e2e8f0", fontSize: 14, margin: 0, fontWeight: 700 }}>7-DAY OUTLOOK</h3>
+                  <h3 style={{ color: "#e2e8f0", fontSize: 14, margin: 0, fontWeight: 700 }}>3-WEEK OUTLOOK</h3>
                   {bestDay && (
                     <div style={{ color: "#22c55e", fontSize: 12, fontWeight: 600 }}>
                       Best day: {bestDay.dayName} {bestDay.dayNum} {bestDay.month} ({bestDay.high.toFixed(0)}\u00b0C high)
