@@ -694,10 +694,6 @@ export default function TransomCalculator() {
     // = (thickness_m) × (density_kg/m³) × 1000 g/kg
     const gsm = (thickness / 1000) * material.density * 1000;
 
-    // Resin volume (litres) = volume_mm3 / 1e6 (1 litre = 1e6 mm³)
-    const resinLitres = volume_mm3 / 1e6;
-    const resinWithWastage = resinLitres * (1 + wastagePercent / 100);
-
     // Rod grid: spacing measured along the panel surface
     const hRods = Math.floor(slopeHeight / rodSpacing) + 1;
     const vRods = Math.floor(transomWidth / rodSpacing) + 1;
@@ -714,7 +710,14 @@ export default function TransomCalculator() {
     const totalRodVolume_mm3 = rodCrossSection * totalRodLength; // mm³
     const totalRodVolume_litres = totalRodVolume_mm3 / 1e6;
 
-    // Net pour volume after rod displacement
+    // Cavity volume (before rod displacement)
+    const cavityLitres = volume_mm3 / 1e6;
+
+    // Actual resin/mix pour volume = cavity minus rod displacement
+    const resinLitres = (volume_mm3 - totalRodVolume_mm3) / 1e6;
+    const resinWithWastage = resinLitres * (1 + wastagePercent / 100);
+
+    // Net pour volume after rod displacement (kept for mix calculator)
     const pourVolume_mm3 = volume_mm3 - totalRodVolume_mm3;
     const pourVolume_litres = pourVolume_mm3 / 1e6;
 
@@ -726,6 +729,7 @@ export default function TransomCalculator() {
       cutoutCount,
       netArea_m2: netArea_m2.toFixed(4),
       volume_m3: (volume_m3 * 1000).toFixed(2),
+      cavityLitres: cavityLitres.toFixed(2),
       resinLitres: resinLitres.toFixed(2),
       resinWithWastage: resinWithWastage.toFixed(2),
       weight_g: weight_g.toFixed(0),
@@ -1132,7 +1136,7 @@ export default function TransomCalculator() {
                 <h3 style={{ color: "#3b82f6", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>RESIN VOLUME</h3>
                 <NumberInput label="Wastage allowance" value={wastagePercent} onChange={setWastagePercent} unit="%" min={0} max={30} />
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
-                  <ResultBox label="Net resin volume" value={calcs.resinLitres} unit="litres" />
+                  <ResultBox label="Pour volume (minus rods)" value={calcs.resinLitres} unit="litres" />
                   <ResultBox label={`With ${wastagePercent}% wastage`} value={calcs.resinWithWastage} unit="litres" highlight />
                 </div>
                 {materialId === "titanpour" && (
@@ -1151,8 +1155,8 @@ export default function TransomCalculator() {
                   <ResultBox label="Gross Area" value={calcs.grossArea_m2} unit="m\u00b2" />
                   {hasCutout && <ResultBox label={`Cutout Area (${cutoutCount}x)`} value={calcs.cutoutArea_m2} unit="m\u00b2" />}
                   <ResultBox label="Net Area" value={calcs.netArea_m2} unit="m\u00b2" highlight />
-                  <ResultBox label="Resin Volume (net)" value={calcs.resinLitres} unit="litres" />
-                  <ResultBox label={`Resin +${wastagePercent}% waste`} value={calcs.resinWithWastage} unit="litres" highlight />
+                  <ResultBox label="Pour volume (minus rods)" value={calcs.resinLitres} unit="litres" />
+                  <ResultBox label={`Pour +${wastagePercent}% waste`} value={calcs.resinWithWastage} unit="litres" highlight />
                   <ResultBox label="Total Weight" value={calcs.weight_kg} unit="kg" highlight />
                   <ResultBox label="GSM (surface weight)" value={calcs.gsm} unit="g/m\u00b2" />
                 </div>
