@@ -21,38 +21,6 @@ const TRANSOM_SHAPES = [
     pros: ["Allows prop trim range", "Sheds following seas", "Reserve buoyancy"],
     cons: ["Reduces waterline length slightly"],
   },
-  {
-    id: "reverse",
-    name: "Reverse (Angled Forward)",
-    desc: "Angles backward from deck to water. Modern \u2018sugar scoop\u2019 or \u2018Euro\u2019 style. Extends waterline and adds swim platform area.",
-    angle: -15,
-    pros: ["Extended waterline", "Built-in swim platform", "Modern aesthetics"],
-    cons: ["Less following-sea protection", "Complex construction"],
-  },
-  {
-    id: "notched",
-    name: "Notched / Cutaway",
-    desc: "Full transom with a central V-shaped cutaway. Reduces drag, allows easy outboard mounting lower on hull.",
-    angle: 14,
-    pros: ["Reduced drag", "Lower motor mount point", "Easy maintenance"],
-    cons: ["Weaker at cutout area", "Needs reinforcement"],
-  },
-  {
-    id: "full",
-    name: "Full Transom",
-    desc: "Extends from hull bottom to gunwale with no cutouts. Maximum strength and wave protection for offshore use.",
-    angle: 10,
-    pros: ["Maximum structural integrity", "Best wave protection", "Safest in rough seas"],
-    cons: ["Boarding from water is harder", "Heavier"],
-  },
-  {
-    id: "walkthrough",
-    name: "Walk-Through",
-    desc: "Full transom with a door/gate opening. Popular on family boats for easy swim platform access.",
-    angle: 12,
-    pros: ["Easy water access", "Family friendly", "Retains most structural strength"],
-    cons: ["Requires careful engineering around opening"],
-  },
 ];
 
 const MATERIALS = [
@@ -137,7 +105,15 @@ const TUTORIAL_STEPS = [
     tab: "rods",
   },
   {
-    title: "4. Check Live Weather",
+    title: "4. Mix Calculator",
+    subtitle: "Mix Calculator tab",
+    body: "Enter your batch weight and the calculator works out the exact catalyst and retarder weights to put on the scales. Catalyst % is applied to the resin fraction only (58% of the batch) — not the total weight. Rod displacement is subtracted from the pour volume automatically.",
+    icon: "mix",
+    accent: "#ef4444",
+    tab: "mix",
+  },
+  {
+    title: "5. Check Live Weather",
     subtitle: "Live Weather tab",
     body: "Search any location worldwide to get real-time temperature, humidity, and dew point — all critical for resin cure. The system gives a GO / CAUTION / NO-GO verdict, finds the best layup window, and shows a 7-day outlook. Data refreshes every 10 minutes.",
     icon: "weather",
@@ -145,7 +121,7 @@ const TUTORIAL_STEPS = [
     tab: "temp",
   },
   {
-    title: "5. Review Your Job Summary",
+    title: "6. Review Your Job Summary",
     subtitle: "Job Summary tab",
     body: "Everything in one place — transom specs, engine config, areas, resin order quantities, rod requirements, and current weather verdict. Use this as your job sheet before you start the pour.",
     icon: "summary",
@@ -345,6 +321,9 @@ function TutorialIcon({ icon, size = 48 }) {
   if (icon === "grid") return (
     <svg viewBox="0 0 48 48" style={s}><rect x="6" y="6" width="36" height="36" fill="none" stroke="#3b82f6" strokeWidth="2"/>{[18,30].map(x=><line key={`v${x}`} x1={x} y1="6" x2={x} y2="42" stroke="#3b82f6" strokeWidth="1.5" opacity="0.6"/>)}{[18,30].map(y=><line key={`h${y}`} x1="6" y1={y} x2="42" y2={y} stroke="#f59e0b" strokeWidth="1.5" opacity="0.6"/>)}</svg>
   );
+  if (icon === "mix") return (
+    <svg viewBox="0 0 48 48" style={s}><path d="M18 8h12v4l4 20a6 6 0 0 1-6 6H20a6 6 0 0 1-6-6L18 12V8z" fill="none" stroke="#ef4444" strokeWidth="2.5"/><line x1="16" y1="28" x2="32" y2="28" stroke="#ef4444" strokeWidth="1.5" opacity="0.5"/><line x1="17" y1="22" x2="31" y2="22" stroke="#ef4444" strokeWidth="1.5" opacity="0.3"/><circle cx="22" cy="32" r="1.5" fill="#f59e0b"/><circle cx="27" cy="30" r="1" fill="#f59e0b"/></svg>
+  );
   if (icon === "weather") return (
     <svg viewBox="0 0 48 48" style={s}><circle cx="20" cy="20" r="8" fill="#f59e0b" opacity="0.8"/>{[[20,4],[20,36],[4,20],[36,20],[9,9],[31,9],[9,31],[31,31]].map(([x,y],i)=><circle key={i} cx={x} cy={y} r="1.5" fill="#f59e0b" opacity="0.4"/>)}<path d="M28 30a8 8 0 0 1-16 0 6 6 0 0 1 0-12 8 8 0 0 1 16 0z" fill="#94a3b8" opacity="0.4" transform="translate(6,4)"/></svg>
   );
@@ -541,6 +520,9 @@ export default function TransomCalculator() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
 
+  // Mix calculator
+  const [batchWeight, setBatchWeight] = useState(1000);
+
   const searchTimeoutRef = useRef(null);
   const dropdownRef = useRef(null);
   const refreshIntervalRef = useRef(null);
@@ -696,6 +678,17 @@ export default function TransomCalculator() {
     const totalVRodLength = vRods * vRodLength;
     const totalRodLength = totalHRodLength + totalVRodLength;
 
+    // Rod displacement: rods occupy volume inside the pour
+    // Volume per rod = π × r² × length (all in mm, result in mm³)
+    const rodRadius = rodDiameter / 2;
+    const rodCrossSection = Math.PI * rodRadius * rodRadius; // mm²
+    const totalRodVolume_mm3 = rodCrossSection * totalRodLength; // mm³
+    const totalRodVolume_litres = totalRodVolume_mm3 / 1e6;
+
+    // Net pour volume after rod displacement
+    const pourVolume_mm3 = volume_mm3 - totalRodVolume_mm3;
+    const pourVolume_litres = pourVolume_mm3 / 1e6;
+
     return {
       slopeHeight: slopeHeight.toFixed(1),
       cutoutSlopeHeight: cutoutSlopeHeight.toFixed(1),
@@ -716,8 +709,69 @@ export default function TransomCalculator() {
       totalVRodLength: (totalVRodLength / 1000).toFixed(2),
       totalRodLength: (totalRodLength / 1000).toFixed(2),
       totalRodCount: hRods + vRods,
+      rodDisplacement_litres: totalRodVolume_litres.toFixed(2),
+      pourVolume_litres: pourVolume_litres.toFixed(2),
+      pourVolume_mm3,
     };
-  }, [transomWidth, transomHeight, transomAngle, thickness, materialId, cutoutWidth, cutoutHeight, cutoutCount, hasCutout, rodSpacing, wastagePercent, material]);
+  }, [transomWidth, transomHeight, transomAngle, thickness, materialId, cutoutWidth, cutoutHeight, cutoutCount, hasCutout, rodSpacing, rodDiameter, wastagePercent, material]);
+
+  // ── Mix calculator ──
+  // Uses live weather temp if available, otherwise defaults to 20°C
+  const ambientTemp = forecastData?.current?.temperature_2m ?? 20;
+
+  const mixCalcs = useMemo(() => {
+    // Mix fractions
+    const RESIN_FRAC = 0.58;
+    const TALC_FRAC = 0.30;
+    const GLASS_FRAC = 0.10;
+    const CATALYST_RETARDER_FRAC = 0.02;
+
+    const resinMass = batchWeight * RESIN_FRAC;
+    const talcMass = batchWeight * TALC_FRAC;
+    const glassMass = batchWeight * GLASS_FRAC;
+
+    // Recommended catalyst % based on ambient temperature (corrected for filled mix)
+    let recommendedCatPct;
+    let tempZone;
+    if (ambientTemp > 26) { recommendedCatPct = 1.2; tempZone = "hot"; }
+    else if (ambientTemp >= 18) { recommendedCatPct = 1.5; tempZone = "normal"; }
+    else { recommendedCatPct = 2.0; tempZone = "cold"; }
+
+    // Catalyst levels — all three options
+    const catalystLevels = [1.2, 1.5, 2.0].map(pct => {
+      const kgOfResin = resinMass * (pct / 100);
+      const pctOfMix = (kgOfResin / batchWeight) * 100;
+      return {
+        pctResin: pct,
+        pctMix: pctOfMix,
+        kg: kgOfResin,
+        recommended: pct === recommendedCatPct,
+      };
+    });
+
+    // Retarder: 0.025% of resin
+    const retarderKg = resinMass * 0.00025;
+    const retarderGrams = retarderKg * 1000;
+
+    // Rod displacement (from main calcs)
+    const rodDisp = parseFloat(calcs.rodDisplacement_litres);
+    const cavityVolume = parseFloat(calcs.volume_m3); // this is in litres (see naming note)
+    const pourNeeded = parseFloat(calcs.pourVolume_litres);
+
+    // Pour weight = pour volume (litres) × mixed density
+    // Mixed density: resin 1100 kg/m³ base, but with 30% talc (~2700) + 10% glass (~2500)
+    // Weighted average: 0.58×1100 + 0.30×2700 + 0.10×2500 + 0.02×1100 ≈ 1700 kg/m³
+    // But we use a simpler approach: batchWeight per litre from the material density
+    const mixDensity_kg_per_litre = material.density / 1000; // density is kg/m³, 1 litre = 0.001 m³
+    const pourWeightKg = pourNeeded * mixDensity_kg_per_litre;
+
+    return {
+      resinMass, talcMass, glassMass,
+      catalystLevels, recommendedCatPct, tempZone,
+      retarderKg, retarderGrams,
+      rodDisp, cavityVolume, pourNeeded, pourWeightKg,
+    };
+  }, [batchWeight, ambientTemp, calcs, material]);
 
   // ── Hourly data for today (next 24h) ──
   const hourlyToday = useMemo(() => {
@@ -821,6 +875,7 @@ export default function TransomCalculator() {
     { id: "shapes", label: "Transom Shapes" },
     { id: "calc", label: "Area & Weight" },
     { id: "rods", label: "Rod Spacing" },
+    { id: "mix", label: "Mix Calculator" },
     { id: "temp", label: "Live Weather" },
     { id: "summary", label: "Job Summary" },
   ];
@@ -1147,6 +1202,153 @@ export default function TransomCalculator() {
                   At {transomAngle}\u00b0 rake, the slope length is <strong style={{ color: "#22c55e" }}>{calcs.vRodLength}mm</strong> vs {transomHeight}mm vertical.
                   <br/><br/>
                   <strong style={{ color: "#f59e0b" }}>Rod \u00f8{rodDiameter}mm</strong> at {rodSpacing}mm centres \u2014 {calcs.totalRodCount} rods total requiring <strong style={{ color: "#22c55e" }}>{calcs.totalRodLength}m</strong> of rod.
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ===== MIX CALCULATOR TAB ===== */}
+        {tab === "mix" && (
+          <div>
+            {/* Batch input */}
+            <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
+              <h3 style={{ color: "#f59e0b", fontSize: 14, margin: "0 0 16px", fontWeight: 700 }}>BATCH SIZE</h3>
+              <NumberInput label="Total batch weight" value={batchWeight} onChange={setBatchWeight} unit="kg" min={1} max={10000} step={10} />
+              <div style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>
+                Ambient temperature: <strong style={{ color: ambientTemp >= 18 && ambientTemp <= 26 ? "#22c55e" : ambientTemp < 18 ? "#3b82f6" : "#ef4444" }}>
+                  {ambientTemp.toFixed(1)}&deg;C
+                </strong>
+                {forecastData?.current ? " (live from weather tab)" : " (default — set location in Live Weather tab)"}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+              {/* Left column */}
+              <div style={{ flex: 1, minWidth: 280 }}>
+                {/* Mix breakdown */}
+                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
+                  <h3 style={{ color: "#f59e0b", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>MIX BREAKDOWN</h3>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                    <ResultBox label="Resin (58%)" value={mixCalcs.resinMass.toFixed(1)} unit="kg" highlight />
+                    <ResultBox label="Talc filler (30%)" value={mixCalcs.talcMass.toFixed(1)} unit="kg" />
+                    <ResultBox label="Glass fibre (10%)" value={mixCalcs.glassMass.toFixed(1)} unit="kg" />
+                    <ResultBox label="Cat + retarder (~2%)" value={(batchWeight * 0.02).toFixed(1)} unit="kg" />
+                  </div>
+                </div>
+
+                {/* Rod displacement */}
+                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
+                  <h3 style={{ color: "#3b82f6", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>POUR VOLUME (ROD DISPLACEMENT)</h3>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                    <ResultBox label="Cavity volume" value={calcs.volume_m3} unit="litres" />
+                    <ResultBox label="Rod displacement" value={calcs.rodDisplacement_litres} unit="litres" />
+                    <ResultBox label="Actual pour needed" value={calcs.pourVolume_litres} unit="litres" highlight />
+                  </div>
+                  <div style={{ color: "#64748b", fontSize: 11, marginTop: 8 }}>
+                    {calcs.totalRodCount} rods ({rodDiameter}mm &oslash;) displace {calcs.rodDisplacement_litres} litres from the cavity
+                  </div>
+                </div>
+
+                {/* Retarder */}
+                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b" }}>
+                  <h3 style={{ color: "#22c55e", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>RETARDER</h3>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                    <ResultBox label="Dose (0.025% of resin)" value={mixCalcs.retarderGrams.toFixed(0)} unit="grams" highlight />
+                    <ResultBox label="In kg" value={mixCalcs.retarderKg.toFixed(3)} unit="kg" />
+                  </div>
+                  <div style={{
+                    marginTop: 10, padding: "8px 12px", background: "#f59e0b10",
+                    border: "1px solid #f59e0b30", borderRadius: 6, fontSize: 11, color: "#f59e0b",
+                  }}>
+                    Retarder is a very small quantity. A 50g error on {mixCalcs.retarderGrams.toFixed(0)}g is a {((50 / mixCalcs.retarderGrams) * 100).toFixed(0)}% mistake — use accurate scales.
+                  </div>
+                </div>
+              </div>
+
+              {/* Right column — catalyst */}
+              <div style={{ flex: 1, minWidth: 280 }}>
+                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
+                  <h3 style={{ color: "#ef4444", fontSize: 14, margin: "0 0 4px", fontWeight: 700 }}>CATALYST — TRIGONOX 239</h3>
+                  <div style={{ color: "#64748b", fontSize: 12, marginBottom: 16 }}>
+                    Recommended level at {ambientTemp.toFixed(1)}&deg;C: <strong style={{ color: "#f59e0b" }}>{mixCalcs.recommendedCatPct}% of resin</strong>
+                  </div>
+
+                  {/* Catalyst table */}
+                  <div style={{ borderRadius: 8, overflow: "hidden", border: "1px solid #1e293b" }}>
+                    {/* Header */}
+                    <div style={{
+                      display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr",
+                      background: "#1e293b", padding: "8px 12px", gap: 8,
+                    }}>
+                      <div style={{ color: "#64748b", fontSize: 11, fontWeight: 700 }}>% OF RESIN</div>
+                      <div style={{ color: "#64748b", fontSize: 11, fontWeight: 700 }}>% OF MIX</div>
+                      <div style={{ color: "#64748b", fontSize: 11, fontWeight: 700 }}>WEIGH OUT</div>
+                      <div style={{ color: "#64748b", fontSize: 11, fontWeight: 700 }}>TEMP RANGE</div>
+                    </div>
+                    {/* Rows */}
+                    {mixCalcs.catalystLevels.map((lvl) => (
+                      <div key={lvl.pctResin} style={{
+                        display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr",
+                        padding: "10px 12px", gap: 8,
+                        background: lvl.recommended ? "#f59e0b12" : "transparent",
+                        borderLeft: lvl.recommended ? "3px solid #f59e0b" : "3px solid transparent",
+                        borderBottom: "1px solid #1e293b",
+                      }}>
+                        <div style={{ color: "#e2e8f0", fontSize: 14, fontWeight: lvl.recommended ? 700 : 400 }}>
+                          {lvl.pctResin}%
+                        </div>
+                        <div style={{ color: "#94a3b8", fontSize: 14 }}>
+                          {lvl.pctMix.toFixed(3)}%
+                        </div>
+                        <div style={{ color: lvl.recommended ? "#f59e0b" : "#e2e8f0", fontSize: 14, fontWeight: 700 }}>
+                          {lvl.kg.toFixed(2)} kg
+                        </div>
+                        <div style={{ fontSize: 11, color: "#94a3b8" }}>
+                          {lvl.pctResin === 1.2 && "> 26\u00b0C"}
+                          {lvl.pctResin === 1.5 && "18\u201326\u00b0C"}
+                          {lvl.pctResin === 2.0 && "< 18\u00b0C"}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                </div>
+
+                {/* The formula */}
+                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
+                  <h3 style={{ color: "#64748b", fontSize: 12, margin: "0 0 12px", fontWeight: 700 }}>THE FORMULA</h3>
+                  <div style={{ color: "#94a3b8", fontSize: 12, lineHeight: 2, fontFamily: "monospace" }}>
+                    <div>Batch weight &times; 0.58 = <strong style={{ color: "#f59e0b" }}>resin mass</strong></div>
+                    <div>Resin mass &times; catalyst % = <strong style={{ color: "#ef4444" }}>catalyst to weigh</strong></div>
+                    <div>Resin mass &times; 0.00025 = <strong style={{ color: "#22c55e" }}>retarder to weigh</strong></div>
+                  </div>
+                  <div style={{ marginTop: 12, color: "#94a3b8", fontSize: 12, lineHeight: 1.6 }}>
+                    <strong style={{ color: "#e2e8f0" }}>Example:</strong> {batchWeight} kg &times; 0.58 = {mixCalcs.resinMass.toFixed(1)} kg resin<br/>
+                    {mixCalcs.resinMass.toFixed(1)} kg &times; {(mixCalcs.recommendedCatPct / 100).toFixed(3)} = <strong style={{ color: "#f59e0b" }}>
+                      {(mixCalcs.resinMass * mixCalcs.recommendedCatPct / 100).toFixed(2)} kg Trigonox 239
+                    </strong>
+                  </div>
+                </div>
+
+                {/* Safety warning */}
+                <div style={{
+                  padding: "16px 20px", background: "#1e0000",
+                  border: "1px solid #ef444460", borderRadius: 8,
+                }}>
+                  <strong style={{ color: "#ef4444", fontSize: 13 }}>CRITICAL — DO NOT MIX UP</strong>
+                  <div style={{ color: "#fca5a5", fontSize: 12, lineHeight: 1.6, marginTop: 6 }}>
+                    Catalyst % applies to the <strong>resin fraction only</strong> (58% of batch), never the total batch weight.
+                    Calculating {mixCalcs.recommendedCatPct}% of the full {batchWeight} kg gives{" "}
+                    <strong style={{ color: "#ef4444" }}>{(batchWeight * mixCalcs.recommendedCatPct / 100).toFixed(2)} kg</strong> — that is{" "}
+                    <strong style={{ color: "#ef4444" }}>
+                      {((batchWeight * mixCalcs.recommendedCatPct / 100) / (mixCalcs.resinMass * mixCalcs.recommendedCatPct / 100) * 100 - 100).toFixed(0)}% too much catalyst
+                    </strong>{" "}
+                    and would cause a dangerous exotherm event.
+                    The correct amount is <strong style={{ color: "#22c55e" }}>
+                      {(mixCalcs.resinMass * mixCalcs.recommendedCatPct / 100).toFixed(2)} kg
+                    </strong>.
+                  </div>
                 </div>
               </div>
             </div>
