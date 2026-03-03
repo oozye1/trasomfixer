@@ -537,7 +537,12 @@ export default function TransomCalculator() {
 
   // Rod spacing
   const [rodSpacing, setRodSpacing] = useState(70);
-  const [rodDiameter, setRodDiameter] = useState(6);
+  const [hRodDiameter, setHRodDiameter] = useState(6);
+  const [vRodDiameter, setVRodDiameter] = useState(6);
+  const [shellThickness, setShellThickness] = useState(6); // existing outer GRP skin (mm)
+  const [minCover, setMinCover] = useState(10); // min resin between rod and mould/shell wall (mm)
+  // Keep rodDiameter as derived value for backward compat (use the larger)
+  const rodDiameter = Math.max(hRodDiameter, vRodDiameter);
 
   // ── LIVE WEATHER STATE ──
   const [locationQuery, setLocationQuery] = useState("");
@@ -703,12 +708,35 @@ export default function TransomCalculator() {
     const totalVRodLength = vRods * vRodLength;
     const totalRodLength = totalHRodLength + totalVRodLength;
 
-    // Rod displacement: rods occupy volume inside the pour
-    // Volume per rod = π × r² × length (all in mm, result in mm³)
-    const rodRadius = rodDiameter / 2;
-    const rodCrossSection = Math.PI * rodRadius * rodRadius; // mm²
-    const totalRodVolume_mm3 = rodCrossSection * totalRodLength; // mm³
+    // Rod displacement: H and V rods may have different diameters
+    const hRodRadius = hRodDiameter / 2;
+    const vRodRadius = vRodDiameter / 2;
+    const hRodCrossSection = Math.PI * hRodRadius * hRodRadius;
+    const vRodCrossSection = Math.PI * vRodRadius * vRodRadius;
+    const hRodVolume_mm3 = hRodCrossSection * totalHRodLength;
+    const vRodVolume_mm3 = vRodCrossSection * totalVRodLength;
+    const totalRodVolume_mm3 = hRodVolume_mm3 + vRodVolume_mm3;
     const totalRodVolume_litres = totalRodVolume_mm3 / 1e6;
+
+    // Pour depth = total thickness minus the existing outer shell
+    const pourDepth = thickness - shellThickness;
+
+    // Cover analysis: minimum resin between rod surface and shell/mould wall
+    // Available depth for rods = pourDepth (shell is already there, rods sit inside the pour)
+    // Single rod cover = (pourDepth - diameter) / 2
+    const hCover = (pourDepth - hRodDiameter) / 2;
+    const vCover = (pourDepth - vRodDiameter) / 2;
+
+    // At rod crossings, H and V rods stack: total rod height = hDia + vDia
+    // Cover at crossing = (pourDepth - hDia - vDia) / 2
+    const stackedHeight = hRodDiameter + vRodDiameter;
+    const stackCover = (pourDepth - stackedHeight) / 2;
+    const stackFits = stackCover >= minCover;
+    const hFits = hCover >= minCover;
+    const vFits = vCover >= minCover;
+
+    // Min total thickness needed (including shell)
+    const minThicknessForStack = stackedHeight + minCover * 2 + shellThickness;
 
     // Cavity volume (before rod displacement)
     const cavityLitres = volume_mm3 / 1e6;
@@ -745,8 +773,15 @@ export default function TransomCalculator() {
       rodDisplacement_litres: totalRodVolume_litres.toFixed(2),
       pourVolume_litres: pourVolume_litres.toFixed(2),
       pourVolume_mm3,
+      // Cover analysis
+      pourDepth,
+      hCover: hCover.toFixed(1),
+      vCover: vCover.toFixed(1),
+      stackCover: stackCover.toFixed(1),
+      stackFits, hFits, vFits,
+      minThicknessForStack,
     };
-  }, [transomWidth, transomHeight, transomAngle, thickness, materialId, cutoutWidth, cutoutHeight, cutoutCount, hasCutout, rodSpacing, rodDiameter, wastagePercent, material]);
+  }, [transomWidth, transomHeight, transomAngle, thickness, shellThickness, materialId, cutoutWidth, cutoutHeight, cutoutCount, hasCutout, rodSpacing, hRodDiameter, vRodDiameter, minCover, wastagePercent, material]);
 
   // ── Mix calculator ──
   // Uses live weather temp if available, otherwise defaults to 20°C
@@ -1074,7 +1109,11 @@ export default function TransomCalculator() {
                 <NumberInput label="Width (beam at transom)" value={transomWidth} onChange={setTransomWidth} unit="mm" min={500} max={5000} />
                 <NumberInput label="Height (vertical)" value={transomHeight} onChange={setTransomHeight} unit="mm" min={200} max={1500} />
                 <NumberInput label="Rake / Slope angle" value={transomAngle} onChange={setTransomAngle} unit="\u00b0" min={0} max={35} />
-                <NumberInput label="Thickness" value={thickness} onChange={setThickness} unit="mm" min={5} max={150} step={0.5} />
+                <NumberInput label="Total thickness" value={thickness} onChange={setThickness} unit="mm" min={5} max={150} step={0.5} />
+                <NumberInput label="Outer shell (existing skin)" value={shellThickness} onChange={setShellThickness} unit="mm" min={0} max={20} />
+                <div style={{ color: "#64748b", fontSize: 11, marginBottom: 4 }}>
+                  Pour depth: <strong style={{ color: "#f59e0b" }}>{calcs.pourDepth}mm</strong> (thickness minus shell)
+                </div>
                 <div style={{ marginTop: 12, marginBottom: 8 }}>
                   <label style={{ color: "#94a3b8", fontSize: 13 }}>Material</label>
                   <select
@@ -1207,15 +1246,133 @@ export default function TransomCalculator() {
         {tab === "rods" && (
           <div>
             <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-              <div style={{ flex: 1, minWidth: 280, background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b" }}>
-                <h3 style={{ color: "#f59e0b", fontSize: 14, margin: "0 0 16px", fontWeight: 700 }}>ROD GRID PARAMETERS</h3>
-                <NumberInput label="Rod spacing (H & V)" value={rodSpacing} onChange={setRodSpacing} unit="mm" min={20} max={300} />
-                <NumberInput label="Rod diameter" value={rodDiameter} onChange={setRodDiameter} unit="mm" min={3} max={20} />
-                <NumberInput label="Transom width" value={transomWidth} onChange={setTransomWidth} unit="mm" />
-                <NumberInput label="Transom height (vertical)" value={transomHeight} onChange={setTransomHeight} unit="mm" />
-                <NumberInput label="Rake angle" value={transomAngle} onChange={setTransomAngle} unit="\u00b0" min={0} max={35} />
-                <div style={{ marginTop: 16, padding: 12, background: "#1e293b", borderRadius: 8 }}>
-                  <div style={{ color: "#64748b", fontSize: 11, marginBottom: 8 }}>AT {rodSpacing}mm SPACING</div>
+              <div style={{ flex: 1, minWidth: 280 }}>
+                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 12 }}>
+                  <h3 style={{ color: "#f59e0b", fontSize: 14, margin: "0 0 16px", fontWeight: 700 }}>ROD GRID PARAMETERS</h3>
+                  <NumberInput label="Rod spacing (H & V)" value={rodSpacing} onChange={setRodSpacing} unit="mm" min={20} max={300} />
+                  <NumberInput label="Horizontal rod diameter" value={hRodDiameter} onChange={setHRodDiameter} unit="mm" min={2} max={20} />
+                  <NumberInput label="Vertical rod diameter" value={vRodDiameter} onChange={setVRodDiameter} unit="mm" min={2} max={20} />
+                  <NumberInput label="Outer shell thickness" value={shellThickness} onChange={setShellThickness} unit="mm" min={0} max={20} />
+                  <NumberInput label="Min resin cover" value={minCover} onChange={setMinCover} unit="mm" min={3} max={30} />
+                  <NumberInput label="Transom width" value={transomWidth} onChange={setTransomWidth} unit="mm" />
+                  <NumberInput label="Transom height (vertical)" value={transomHeight} onChange={setTransomHeight} unit="mm" />
+                  <NumberInput label="Rake angle" value={transomAngle} onChange={setTransomAngle} unit={"\u00b0"} min={0} max={35} />
+                </div>
+
+                {/* Cover / fit analysis */}
+                <div style={{
+                  background: "#0f172a", borderRadius: 12, padding: 20, marginBottom: 12,
+                  border: calcs.stackFits ? "1px solid #1e293b" : "1px solid #ef444460",
+                }}>
+                  <h3 style={{ color: "#3b82f6", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>COVER &amp; FIT CHECK</h3>
+                  <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 12, lineHeight: 1.6 }}>
+                    Total thickness: <strong style={{ color: "#e2e8f0" }}>{thickness}mm</strong> &middot;
+                    Shell: <strong style={{ color: "#e2e8f0" }}>{shellThickness}mm</strong> &middot;
+                    Pour depth: <strong style={{ color: "#f59e0b" }}>{calcs.pourDepth}mm</strong> &middot;
+                    Min cover: <strong style={{ color: "#f59e0b" }}>{minCover}mm</strong>
+                  </div>
+
+                  {/* H rod */}
+                  <div style={{
+                    padding: "10px 14px", borderRadius: 8, marginBottom: 8,
+                    background: calcs.hFits ? "#22c55e08" : "#ef444410",
+                    border: `1px solid ${calcs.hFits ? "#22c55e30" : "#ef444440"}`,
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 600 }}>
+                        Horizontal &oslash;{hRodDiameter}mm <span style={{ color: "#94a3b8", fontWeight: 400, fontSize: 11 }}>— cover: {calcs.hCover}mm</span>
+                      </div>
+                      <div style={{
+                        padding: "3px 8px", borderRadius: 4, fontSize: 10, fontWeight: 700,
+                        background: calcs.hFits ? "#22c55e20" : "#ef444420",
+                        color: calcs.hFits ? "#22c55e" : "#ef4444",
+                      }}>
+                        {calcs.hFits ? "OK" : "TOO TIGHT"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* V rod */}
+                  <div style={{
+                    padding: "10px 14px", borderRadius: 8, marginBottom: 8,
+                    background: calcs.vFits ? "#22c55e08" : "#ef444410",
+                    border: `1px solid ${calcs.vFits ? "#22c55e30" : "#ef444440"}`,
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 600 }}>
+                        Vertical &oslash;{vRodDiameter}mm <span style={{ color: "#94a3b8", fontWeight: 400, fontSize: 11 }}>— cover: {calcs.vCover}mm</span>
+                      </div>
+                      <div style={{
+                        padding: "3px 8px", borderRadius: 4, fontSize: 10, fontWeight: 700,
+                        background: calcs.vFits ? "#22c55e20" : "#ef444420",
+                        color: calcs.vFits ? "#22c55e" : "#ef4444",
+                      }}>
+                        {calcs.vFits ? "OK" : "TOO TIGHT"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stacked at crossing */}
+                  <div style={{
+                    padding: "10px 14px", borderRadius: 8,
+                    background: calcs.stackFits ? "#22c55e08" : "#ef444410",
+                    border: `1px solid ${calcs.stackFits ? "#22c55e30" : "#ef444440"}`,
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 600 }}>
+                        At crossing ({hRodDiameter}+{vRodDiameter}={hRodDiameter + vRodDiameter}mm)
+                        <span style={{ color: "#94a3b8", fontWeight: 400, fontSize: 11 }}> — cover: {calcs.stackCover}mm</span>
+                      </div>
+                      <div style={{
+                        padding: "3px 8px", borderRadius: 4, fontSize: 10, fontWeight: 700,
+                        background: calcs.stackFits ? "#22c55e20" : "#ef444420",
+                        color: calcs.stackFits ? "#22c55e" : "#ef4444",
+                      }}>
+                        {calcs.stackFits ? "FITS" : "WON'T FIT"}
+                      </div>
+                    </div>
+                    {!calcs.stackFits && (
+                      <div style={{ color: "#ef4444", fontSize: 11, marginTop: 6 }}>
+                        Need {calcs.minThicknessForStack}mm thickness for &oslash;{hRodDiameter}mm + &oslash;{vRodDiameter}mm stacked with {minCover}mm cover each side.
+                        {hRodDiameter !== vRodDiameter
+                          ? ` Try reducing the ${hRodDiameter > vRodDiameter ? "horizontal" : "vertical"} rod diameter.`
+                          : " Reduce rod diameter or increase transom thickness."}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Cross-section at crossing */}
+                  <div style={{ marginTop: 14 }}>
+                    <div style={{ color: "#64748b", fontSize: 11, marginBottom: 6 }}>CROSS-SECTION AT ROD CROSSING</div>
+                    <svg viewBox="0 0 200 100" style={{ width: "100%", maxWidth: 300, background: "#020617", borderRadius: 8 }}>
+                      <rect x="40" y="10" width="120" height="80" fill="#b4530920" stroke="#f59e0b" strokeWidth="1.5" rx="2" />
+                      <text x="100" y="7" fill="#64748b" fontSize="7" textAnchor="middle">{thickness}mm</text>
+                      {(() => {
+                        const scale = 70 / thickness;
+                        const cy = 50;
+                        const rH = (hRodDiameter / 2) * scale;
+                        const rV = (vRodDiameter / 2) * scale;
+                        return (
+                          <>
+                            <circle cx="100" cy={cy - rV} r={rH} fill="#f59e0b40" stroke="#f59e0b" strokeWidth="1" />
+                            <text x="100" fill="#f59e0b" fontSize="6" textAnchor="middle" y={cy - rV + 2}>H &oslash;{hRodDiameter}</text>
+                            <circle cx="100" cy={cy + rH} r={rV} fill="#3b82f640" stroke="#3b82f6" strokeWidth="1" />
+                            <text x="100" fill="#3b82f6" fontSize="6" textAnchor="middle" y={cy + rH + 2}>V &oslash;{vRodDiameter}</text>
+                            {/* Cover line */}
+                            <line x1="30" y1={10} x2="30" y2={10 + parseFloat(calcs.stackCover) * scale} stroke={calcs.stackFits ? "#22c55e" : "#ef4444"} strokeWidth="1.5" />
+                            <text x="22" y={10 + parseFloat(calcs.stackCover) * scale / 2 + 2} fill={calcs.stackFits ? "#22c55e" : "#ef4444"} fontSize="6" textAnchor="middle">{calcs.stackCover}</text>
+                          </>
+                        );
+                      })()}
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ flex: 1, minWidth: 280 }}>
+                {/* Grid results */}
+                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 12 }}>
+                  <div style={{ color: "#64748b", fontSize: 11, marginBottom: 8 }}>AT {rodSpacing}mm SPACING &mdash; H &oslash;{hRodDiameter}mm / V &oslash;{vRodDiameter}mm</div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                     <ResultBox label="Horizontal rods" value={calcs.hRods} unit="rods" />
                     <ResultBox label="Vertical rods" value={calcs.vRods} unit="rods" />
@@ -1230,37 +1387,43 @@ export default function TransomCalculator() {
                   <div style={{ marginTop: 8 }}>
                     <ResultBox label="Total rod count" value={calcs.totalRodCount} unit={`(${calcs.hRods}H + ${calcs.vRods}V)`} />
                   </div>
+                  {hRodDiameter !== vRodDiameter && (
+                    <div style={{ marginTop: 10, padding: "8px 12px", background: "#f59e0b10", border: "1px solid #f59e0b30", borderRadius: 6, fontSize: 11, color: "#f59e0b" }}>
+                      Two rod sizes: order &oslash;{hRodDiameter}mm for horizontal and &oslash;{vRodDiameter}mm for vertical separately.
+                    </div>
+                  )}
                 </div>
-              </div>
 
-              <div style={{ flex: 1, minWidth: 280, background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b" }}>
-                <h3 style={{ color: "#64748b", fontSize: 12, margin: "0 0 12px" }}>ROD GRID PREVIEW (face-on)</h3>
-                <svg viewBox="0 0 300 220" style={{ width: "100%", background: "#020617", borderRadius: 8 }}>
-                  <rect x="30" y="20" width="240" height="170" fill="none" stroke="#334155" strokeWidth="1.5" rx="2" />
-                  {Array.from({ length: Math.min(calcs.hRods, 30) }).map((_, i) => {
-                    const y = 20 + (i * 170) / Math.max(calcs.hRods - 1, 1);
-                    return <line key={`h${i}`} x1="30" y1={y} x2="270" y2={y} stroke="#f59e0b" strokeWidth="0.8" opacity="0.5" />;
-                  })}
-                  {Array.from({ length: Math.min(calcs.vRods, 40) }).map((_, i) => {
-                    const x = 30 + (i * 240) / Math.max(calcs.vRods - 1, 1);
-                    return <line key={`v${i}`} x1={x} y1="20" x2={x} y2="190" stroke="#3b82f6" strokeWidth="0.8" opacity="0.5" />;
-                  })}
-                  {hasCutout && (() => {
-                    const cw = (cutoutWidth / transomWidth) * 240;
-                    const ch = (cutoutHeight / transomHeight) * 170;
-                    const cx = 30 + (240 - cw) / 2;
-                    return <rect x={cx} y={20} width={cw} height={ch} fill="#020617" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="4,3" />;
-                  })()}
-                  <text x="150" y="210" fill="#64748b" fontSize="9" textAnchor="middle">{transomWidth}mm</text>
-                  <text x="18" y="105" fill="#64748b" fontSize="9" textAnchor="middle" transform="rotate(-90, 18, 105)">{calcs.slopeHeight}mm (slope)</text>
-                  <text x="280" y="105" fill="#f59e0b" fontSize="8" textAnchor="start">H: {calcs.hRods}</text>
-                  <text x="150" y="14" fill="#3b82f6" fontSize="8" textAnchor="middle">V: {calcs.vRods}</text>
-                </svg>
-                <div style={{ marginTop: 12, padding: 10, background: "#1e293b", borderRadius: 8, fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>
-                  <strong style={{ color: "#f59e0b" }}>Key measurement:</strong> Each vertical rod runs along the slope, not the vertical height.
-                  At {transomAngle}\u00b0 rake, the slope length is <strong style={{ color: "#22c55e" }}>{calcs.vRodLength}mm</strong> vs {transomHeight}mm vertical.
-                  <br/><br/>
-                  <strong style={{ color: "#f59e0b" }}>Rod \u00f8{rodDiameter}mm</strong> at {rodSpacing}mm centres \u2014 {calcs.totalRodCount} rods total requiring <strong style={{ color: "#22c55e" }}>{calcs.totalRodLength}m</strong> of rod.
+                {/* Grid preview */}
+                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b" }}>
+                  <h3 style={{ color: "#64748b", fontSize: 12, margin: "0 0 12px" }}>ROD GRID PREVIEW (face-on)</h3>
+                  <svg viewBox="0 0 300 220" style={{ width: "100%", background: "#020617", borderRadius: 8 }}>
+                    <rect x="30" y="20" width="240" height="170" fill="none" stroke="#334155" strokeWidth="1.5" rx="2" />
+                    {Array.from({ length: Math.min(calcs.hRods, 30) }).map((_, i) => {
+                      const y = 20 + (i * 170) / Math.max(calcs.hRods - 1, 1);
+                      return <line key={`h${i}`} x1="30" y1={y} x2="270" y2={y} stroke="#f59e0b" strokeWidth="0.8" opacity="0.5" />;
+                    })}
+                    {Array.from({ length: Math.min(calcs.vRods, 40) }).map((_, i) => {
+                      const x = 30 + (i * 240) / Math.max(calcs.vRods - 1, 1);
+                      return <line key={`v${i}`} x1={x} y1="20" x2={x} y2="190" stroke="#3b82f6" strokeWidth="0.8" opacity="0.5" />;
+                    })}
+                    {hasCutout && (() => {
+                      const cw = (cutoutWidth / transomWidth) * 240;
+                      const ch = (cutoutHeight / transomHeight) * 170;
+                      const cx = 30 + (240 - cw) / 2;
+                      return <rect x={cx} y={20} width={cw} height={ch} fill="#020617" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="4,3" />;
+                    })()}
+                    <text x="150" y="210" fill="#64748b" fontSize="9" textAnchor="middle">{transomWidth}mm</text>
+                    <text x="18" y="105" fill="#64748b" fontSize="9" textAnchor="middle" transform="rotate(-90, 18, 105)">{calcs.slopeHeight}mm (slope)</text>
+                    <text x="280" y="105" fill="#f59e0b" fontSize="8" textAnchor="start">H: {calcs.hRods}</text>
+                    <text x="150" y="14" fill="#3b82f6" fontSize="8" textAnchor="middle">V: {calcs.vRods}</text>
+                  </svg>
+                  <div style={{ marginTop: 12, padding: 10, background: "#1e293b", borderRadius: 8, fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>
+                    <strong style={{ color: "#f59e0b" }}>Key measurement:</strong> Each vertical rod runs along the slope, not the vertical height.
+                    At {transomAngle}&deg; rake, the slope length is <strong style={{ color: "#22c55e" }}>{calcs.vRodLength}mm</strong> vs {transomHeight}mm vertical.
+                    <br/><br/>
+                    <strong style={{ color: "#f59e0b" }}>H &oslash;{hRodDiameter}mm</strong> / <strong style={{ color: "#3b82f6" }}>V &oslash;{vRodDiameter}mm</strong> at {rodSpacing}mm centres — {calcs.totalRodCount} rods total requiring <strong style={{ color: "#22c55e" }}>{calcs.totalRodLength}m</strong> of rod.
+                  </div>
                 </div>
               </div>
             </div>
@@ -1305,7 +1468,7 @@ export default function TransomCalculator() {
                     <ResultBox label="Actual pour needed" value={calcs.pourVolume_litres} unit="litres" highlight />
                   </div>
                   <div style={{ color: "#64748b", fontSize: 11, marginTop: 8 }}>
-                    {calcs.totalRodCount} rods ({rodDiameter}mm &oslash;) displace {calcs.rodDisplacement_litres} litres from the cavity
+                    {calcs.totalRodCount} rods (H &oslash;{hRodDiameter}mm / V &oslash;{vRodDiameter}mm) displace {calcs.rodDisplacement_litres} litres from the cavity
                   </div>
                 </div>
 
@@ -1918,7 +2081,7 @@ export default function TransomCalculator() {
                   Reinforcement Rod Requirements
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 8 }}>
-                  <ResultBox label="Rod diameter" value={rodDiameter} unit="mm" />
+                  <ResultBox label="Rod diameter (H / V)" value={`${hRodDiameter} / ${vRodDiameter}`} unit="mm" />
                   <ResultBox label="Grid spacing" value={rodSpacing} unit="mm" />
                   <ResultBox label="Horizontal rods" value={calcs.hRods} unit={`@ ${calcs.hRodLength}mm`} />
                   <ResultBox label="Vertical rods" value={calcs.vRods} unit={`@ ${calcs.vRodLength}mm`} />
