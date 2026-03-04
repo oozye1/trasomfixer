@@ -1092,8 +1092,11 @@ export default function TransomCalculator() {
                   <NumberInput label="Centre height (deepest)" value={centreHeight} onChange={setCentreHeight} unit="mm" min={200} max={1500} />
                   <NumberInput label="Side height (edges)" value={sideHeight} onChange={setSideHeight} unit="mm" min={50} max={1500} />
                   <NumberInput label="Depth (total thickness)" value={thickness} onChange={setThickness} unit="mm" min={5} max={150} step={0.5} />
-                  <NumberInput label="Outer shell" value={shellThickness} onChange={setShellThickness} unit="mm" min={0} max={20} />
-                  <NumberInput label="Rake angle" value={transomAngle} onChange={setTransomAngle} unit={"\u00b0"} min={0} max={35} />
+                </div>
+                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
+                  <h3 style={{ color: "#f59e0b", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>MOTORWELL CUTOUT</h3>
+                  <NumberInput label="Cutout width" value={cutoutWidth} onChange={setCutoutWidth} unit="mm" min={0} max={3000} />
+                  <NumberInput label="Cutout height" value={cutoutHeight} onChange={setCutoutHeight} unit="mm" min={0} max={1000} />
                 </div>
               </div>
 
