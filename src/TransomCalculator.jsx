@@ -468,6 +468,7 @@ export default function TransomCalculator() {
 
   // Mix calculator
   const [batchWeight, setBatchWeight] = useState(1000);
+  const [maxPourHeight, setMaxPourHeight] = useState(140); // mm vertical per pour
 
   const searchTimeoutRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -666,6 +667,48 @@ export default function TransomCalculator() {
     const pourVolume_mm3 = volume_mm3 - totalRodVolume_mm3;
     const pourVolume_litres = pourVolume_mm3 / 1e6;
 
+    // ── Pour breakdown (140mm bands from bottom of V upward) ──
+    // Coordinate: y measured from bottom of V (lowest point) upward
+    // Triangle zone: y = 0 to triH, width = W * y / triH
+    // Rectangle zone: y = triH to centreH, width = W
+    const triH = centreHeight - sideHeight; // height of triangle zone (vertical)
+    const pourBands = [];
+    const numPours = Math.ceil(centreHeight / maxPourHeight);
+    let cumulativeVol = 0;
+    for (let p = 0; p < numPours; p++) {
+      const y1 = p * maxPourHeight;
+      const y2 = Math.min((p + 1) * maxPourHeight, centreHeight);
+      // Integrate width(y) dy from y1 to y2
+      let vertArea_mm2 = 0;
+      if (triH > 0) {
+        // Triangle zone contribution
+        const tLo = Math.max(y1, 0);
+        const tHi = Math.min(y2, triH);
+        if (tHi > tLo) {
+          vertArea_mm2 += (transomWidth / triH) * (tHi * tHi - tLo * tLo) / 2;
+        }
+      }
+      // Rectangle zone contribution
+      const rLo = Math.max(y1, triH);
+      const rHi = y2;
+      if (rHi > rLo) {
+        vertArea_mm2 += transomWidth * (rHi - rLo);
+      }
+      // Volume = vertArea * thickness / cos(angle)
+      // vertArea is in mm², thickness in mm, result in mm³
+      const bandVol_mm3 = vertArea_mm2 * thickness / cosAngle;
+      const bandVol_litres = bandVol_mm3 / 1e6;
+      cumulativeVol += bandVol_litres;
+      pourBands.push({
+        pour: p + 1,
+        fromY: y1,
+        toY: y2,
+        height: y2 - y1,
+        litres: bandVol_litres,
+        cumulative: cumulativeVol,
+      });
+    }
+
     return {
       centreSlopeHeight: centreSlopeHeight.toFixed(1),
       sideSlopeHeight: sideSlopeHeight.toFixed(1),
@@ -692,8 +735,9 @@ export default function TransomCalculator() {
       stackCover: stackCover.toFixed(1),
       stackFits, hFits, vFits,
       minThicknessForStack,
+      pourBands,
     };
-  }, [transomWidth, centreHeight, sideHeight, transomAngle, thickness, shellThickness, cutoutWidth, cutoutHeight, cutoutCount, hasCutout, rodSpacing, hRodDiameter, vRodDiameter, minCover, wastagePercent]);
+  }, [transomWidth, centreHeight, sideHeight, transomAngle, thickness, shellThickness, cutoutWidth, cutoutHeight, cutoutCount, hasCutout, rodSpacing, hRodDiameter, vRodDiameter, minCover, wastagePercent, maxPourHeight]);
 
   // ── Mix calculator ──
   // Uses live weather temp if available, otherwise defaults to 20°C
@@ -1376,6 +1420,38 @@ export default function TransomCalculator() {
                   </div>
                   <div style={{ color: "#64748b", fontSize: 11, marginTop: 8 }}>
                     {calcs.totalRodCount} rods (H &oslash;{hRodDiameter}mm / V &oslash;{vRodDiameter}mm) displace {calcs.rodDisplacement_litres} litres from the cavity
+                  </div>
+                </div>
+
+                {/* Pour breakdown by 140mm bands */}
+                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
+                  <h3 style={{ color: "#a855f7", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>POUR BREAKDOWN</h3>
+                  <NumberInput label="Max pour height" value={maxPourHeight} onChange={setMaxPourHeight} unit="mm" min={50} max={500} step={10} />
+                  <div style={{ marginTop: 12, borderRadius: 8, overflow: "hidden", border: "1px solid #1e293b" }}>
+                    <div style={{
+                      display: "grid", gridTemplateColumns: "50px 1fr 1fr 1fr",
+                      background: "#1e293b", padding: "8px 12px", gap: 8,
+                    }}>
+                      <div style={{ color: "#64748b", fontSize: 11, fontWeight: 700 }}>POUR</div>
+                      <div style={{ color: "#64748b", fontSize: 11, fontWeight: 700 }}>BAND (mm)</div>
+                      <div style={{ color: "#64748b", fontSize: 11, fontWeight: 700 }}>LITRES</div>
+                      <div style={{ color: "#64748b", fontSize: 11, fontWeight: 700 }}>CUMULATIVE</div>
+                    </div>
+                    {calcs.pourBands.map((band) => (
+                      <div key={band.pour} style={{
+                        display: "grid", gridTemplateColumns: "50px 1fr 1fr 1fr",
+                        padding: "8px 12px", gap: 8,
+                        borderBottom: "1px solid #1e293b",
+                      }}>
+                        <div style={{ color: "#a855f7", fontSize: 13, fontWeight: 700 }}>#{band.pour}</div>
+                        <div style={{ color: "#94a3b8", fontSize: 13 }}>{band.fromY}&ndash;{band.toY}</div>
+                        <div style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 700 }}>{band.litres.toFixed(2)} L</div>
+                        <div style={{ color: "#64748b", fontSize: 13 }}>{band.cumulative.toFixed(2)} L</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ color: "#64748b", fontSize: 11, marginTop: 8 }}>
+                    {calcs.pourBands.length} pours at {maxPourHeight}mm max. Measured from bottom of V upward. Volumes are cavity (before rod displacement).
                   </div>
                 </div>
 
