@@ -6,13 +6,13 @@ import transomDiagram from "./assets/image.jpg";
 // ═══════════════════════════════════════════
 
 const MATERIALS = [
-  { id: "titanpour", name: "TitanPour Resin System (pourable composite)", density: 1550, desc: "~1550 kg/m\u00b3 *" },
-  { id: "frp_hand", name: "FRP Hand Layup (CSM + Polyester)", density: 1500, desc: "~1500 kg/m\u00b3" },
-  { id: "frp_spray", name: "FRP Spray-up", density: 1400, desc: "~1400 kg/m\u00b3" },
-  { id: "frp_vacuum", name: "FRP Vacuum Infused (Woven + Epoxy)", density: 1700, desc: "~1700 kg/m\u00b3" },
-  { id: "marine_ply", name: "Marine Plywood", density: 550, desc: "~550 kg/m\u00b3" },
-  { id: "coosa", name: "Coosa Board (Composite Core)", density: 420, desc: "~420 kg/m\u00b3" },
-  { id: "aluminium", name: "Marine Aluminium (5083)", density: 2660, desc: "~2660 kg/m\u00b3" },
+  { id: "titanpour", name: "TitanPour Resin System (pourable composite)", density: 1550, desc: "~1550 kg/m³ *" },
+  { id: "frp_hand", name: "FRP Hand Layup (CSM + Polyester)", density: 1500, desc: "~1500 kg/m³" },
+  { id: "frp_spray", name: "FRP Spray-up", density: 1400, desc: "~1400 kg/m³" },
+  { id: "frp_vacuum", name: "FRP Vacuum Infused (Woven + Epoxy)", density: 1700, desc: "~1700 kg/m³" },
+  { id: "marine_ply", name: "Marine Plywood", density: 550, desc: "~550 kg/m³" },
+  { id: "coosa", name: "Coosa Board (Composite Core)", density: 420, desc: "~420 kg/m³" },
+  { id: "aluminium", name: "Marine Aluminium (5083)", density: 2660, desc: "~2660 kg/m³" },
 ];
 
 const ENGINE_CONFIGS = [
@@ -178,16 +178,16 @@ function getCureVerdict(temp, humidity, dewPoint) {
     return { status: "GO", color: "#22c55e", label: "IDEAL CONDITIONS", msg: "Temperature and humidity within optimal range for resin cure." };
   }
   if (dewMargin < 2) {
-    return { status: "NO-GO", color: "#ef4444", label: "DEW POINT RISK", msg: "Surface condensation likely. Substrate must be 3\u00b0C above dew point." };
+    return { status: "NO-GO", color: "#ef4444", label: "DEW POINT RISK", msg: "Surface condensation likely. Substrate must be 3°C above dew point." };
   }
   if (temp < 10) {
-    return { status: "NO-GO", color: "#ef4444", label: "TOO COLD", msg: "Risk of incomplete cure. Heated workspace required. Min substrate temp: 10\u00b0C." };
+    return { status: "NO-GO", color: "#ef4444", label: "TOO COLD", msg: "Risk of incomplete cure. Heated workspace required. Min substrate temp: 10°C." };
   }
   if (humidity >= 85) {
     return { status: "NO-GO", color: "#ef4444", label: "TOO HUMID", msg: "High humidity will affect surface cure and gel coat. Forced ventilation needed." };
   }
   if (temp >= 10 && temp < 15) {
-    return { status: "CAUTION", color: "#f59e0b", label: "WORKABLE \u2014 SLOW HARDENER", msg: "Extend cure time 50\u2013100%. Use slow/winter hardener. Work warmest hours." };
+    return { status: "CAUTION", color: "#f59e0b", label: "WORKABLE — SLOW HARDENER", msg: "Extend cure time 50–100%. Use slow/winter hardener. Work warmest hours." };
   }
   if (humidity >= 80) {
     return { status: "CAUTION", color: "#f59e0b", label: "HUMIDITY MARGINAL", msg: "Humidity above 80%. Ensure ventilation. Monitor for surface moisture." };
@@ -580,7 +580,7 @@ export default function TransomCalculator() {
         handleSelectLocation({
           name: "My Location",
           admin1: "",
-          country: `${pos.coords.latitude.toFixed(3)}\u00b0, ${pos.coords.longitude.toFixed(3)}\u00b0`,
+          country: `${pos.coords.latitude.toFixed(3)}°, ${pos.coords.longitude.toFixed(3)}°`,
           latitude: pos.coords.latitude,
           longitude: pos.coords.longitude,
         });
@@ -1070,7 +1070,7 @@ export default function TransomCalculator() {
               {t.label}
               {t.id === "temp" && forecastData?.current && (
                 <span style={{ marginLeft: 6, fontSize: 11, opacity: 0.8 }}>
-                  {forecastData.current.temperature_2m.toFixed(0)}\u00b0C
+                  {forecastData.current.temperature_2m.toFixed(0)}°C
                 </span>
               )}
             </button>
@@ -1130,7 +1130,7 @@ export default function TransomCalculator() {
                 <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
                   <h3 style={{ color: "#3b82f6", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>RESULTS</h3>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                    <ResultBox label="Net area" value={quickCalc.netArea_m2.toFixed(4)} unit="m\u00b2" />
+                    <ResultBox label="Net area" value={quickCalc.netArea_m2.toFixed(4)} unit="m²" />
                     <ResultBox label="Cavity volume" value={quickCalc.cavityLitres.toFixed(2)} unit="litres" />
                     <ResultBox label="Rod displacement" value={quickCalc.rodDispLitres.toFixed(2)} unit="litres" />
                     <ResultBox label="Pour volume" value={quickCalc.pourLitres.toFixed(2)} unit="litres" highlight />
@@ -1202,7 +1202,7 @@ export default function TransomCalculator() {
                 <NumberInput label="Width (beam at transom)" value={transomWidth} onChange={setTransomWidth} unit="mm" min={500} max={5000} />
                 <NumberInput label="Centre height (deepest)" value={centreHeight} onChange={setCentreHeight} unit="mm" min={200} max={1500} />
                 <NumberInput label="Side height (edges)" value={sideHeight} onChange={setSideHeight} unit="mm" min={50} max={1500} />
-                <NumberInput label="Rake / Slope angle" value={transomAngle} onChange={setTransomAngle} unit="\u00b0" min={0} max={35} />
+                <NumberInput label="Rake / Slope angle" value={transomAngle} onChange={setTransomAngle} unit="°" min={0} max={35} />
                 <NumberInput label="Total thickness" value={thickness} onChange={setThickness} unit="mm" min={5} max={150} step={0.5} />
                 <NumberInput label="Outer shell (existing skin)" value={shellThickness} onChange={setShellThickness} unit="mm" min={0} max={20} />
                 <div style={{ color: "#64748b", fontSize: 11, marginBottom: 4 }}>
@@ -1220,7 +1220,7 @@ export default function TransomCalculator() {
                     }}
                   >
                     {MATERIALS.map((m) => (
-                      <option key={m.id} value={m.id}>{m.name} \u2014 {m.desc}</option>
+                      <option key={m.id} value={m.id}>{m.name} — {m.desc}</option>
                     ))}
                   </select>
                 </div>
@@ -1259,7 +1259,7 @@ export default function TransomCalculator() {
                     )}
                     <div style={{ color: "#64748b", fontSize: 11, marginTop: 4 }}>
                       {cutoutCount > 1 ? `${cutoutCount} cutouts @ ${cutoutWidth} x ${cutoutHeight} mm each` : `${cutoutWidth} x ${cutoutHeight} mm`}
-                      {cutoutCount > 1 && ` \u2014 total cutout area: ${calcs.cutoutArea_m2} m\u00b2`}
+                      {cutoutCount > 1 && ` — total cutout area: ${calcs.cutoutArea_m2} m²`}
                     </div>
                   </>
                 )}
@@ -1274,7 +1274,7 @@ export default function TransomCalculator() {
                 </div>
                 {materialId === "titanpour" && (
                   <div style={{ color: "#f59e0b", fontSize: 11, marginTop: 8, fontStyle: "italic" }}>
-                    * TitanPour density is placeholder (1550 kg/m\u00b3). Update when confirmed specs available.
+                    * TitanPour density is placeholder (1550 kg/m³). Update when confirmed specs available.
                   </div>
                 )}
               </div>
@@ -1286,9 +1286,9 @@ export default function TransomCalculator() {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   <ResultBox label="Centre slope height" value={calcs.centreSlopeHeight} unit="mm" />
                   <ResultBox label="Side slope height" value={calcs.sideSlopeHeight} unit="mm" />
-                  <ResultBox label="Gross Area (pentagon)" value={calcs.grossArea_m2} unit="m\u00b2" />
-                  {hasCutout && <ResultBox label={`Cutout Area (${cutoutCount}x)`} value={calcs.cutoutArea_m2} unit="m\u00b2" />}
-                  <ResultBox label="Net Area" value={calcs.netArea_m2} unit="m\u00b2" highlight />
+                  <ResultBox label="Gross Area (pentagon)" value={calcs.grossArea_m2} unit="m²" />
+                  {hasCutout && <ResultBox label={`Cutout Area (${cutoutCount}x)`} value={calcs.cutoutArea_m2} unit="m²" />}
+                  <ResultBox label="Net Area" value={calcs.netArea_m2} unit="m²" highlight />
                   <ResultBox label="Cavity volume" value={calcs.cavityLitres} unit="litres" />
                   <ResultBox label="Pour volume (minus rods)" value={calcs.resinLitres} unit="litres" />
                   <ResultBox label={`Pour +${wastagePercent}% waste`} value={calcs.resinWithWastage} unit="litres" highlight />
@@ -1355,7 +1355,7 @@ export default function TransomCalculator() {
                   <NumberInput label="Transom width" value={transomWidth} onChange={setTransomWidth} unit="mm" />
                   <NumberInput label="Centre height" value={centreHeight} onChange={setCentreHeight} unit="mm" />
                   <NumberInput label="Side height" value={sideHeight} onChange={setSideHeight} unit="mm" />
-                  <NumberInput label="Rake angle" value={transomAngle} onChange={setTransomAngle} unit={"\u00b0"} min={0} max={35} />
+                  <NumberInput label="Rake angle" value={transomAngle} onChange={setTransomAngle} unit={"°"} min={0} max={35} />
                 </div>
 
                 {/* Cover / fit analysis */}
@@ -1705,9 +1705,9 @@ export default function TransomCalculator() {
                           {lvl.kg.toFixed(2)} kg
                         </div>
                         <div style={{ fontSize: 11, color: "#94a3b8" }}>
-                          {lvl.pctResin === 1.2 && "> 26\u00b0C"}
-                          {lvl.pctResin === 1.5 && "18\u201326\u00b0C"}
-                          {lvl.pctResin === 2.0 && "< 18\u00b0C"}
+                          {lvl.pctResin === 1.2 && "> 26°C"}
+                          {lvl.pctResin === 1.5 && "18–26°C"}
+                          {lvl.pctResin === 2.0 && "< 18°C"}
                         </div>
                       </div>
                     ))}
@@ -1823,11 +1823,11 @@ export default function TransomCalculator() {
                       >
                         <strong>{r.name}</strong>
                         <span style={{ color: "#94a3b8" }}>
-                          {r.admin1 ? ` \u2014 ${r.admin1}, ` : " \u2014 "}{r.country}
+                          {r.admin1 ? ` — ${r.admin1}, ` : " — "}{r.country}
                         </span>
                         <span style={{ color: "#64748b", fontSize: 11, float: "right" }}>
-                          {Math.abs(r.latitude).toFixed(2)}\u00b0{r.latitude >= 0 ? "N" : "S"},{" "}
-                          {Math.abs(r.longitude).toFixed(2)}\u00b0{r.longitude >= 0 ? "E" : "W"}
+                          {Math.abs(r.latitude).toFixed(2)}°{r.latitude >= 0 ? "N" : "S"},{" "}
+                          {Math.abs(r.longitude).toFixed(2)}°{r.longitude >= 0 ? "E" : "W"}
                         </span>
                       </button>
                     ))}
@@ -1844,8 +1844,8 @@ export default function TransomCalculator() {
                     {selectedLocation.country ? `, ${selectedLocation.country}` : ""}
                   </div>
                   <div style={{ color: "#64748b", fontSize: 12 }}>
-                    {Math.abs(selectedLocation.latitude).toFixed(4)}\u00b0{selectedLocation.latitude >= 0 ? "N" : "S"},{" "}
-                    {Math.abs(selectedLocation.longitude).toFixed(4)}\u00b0{selectedLocation.longitude >= 0 ? "E" : "W"}
+                    {Math.abs(selectedLocation.latitude).toFixed(4)}°{selectedLocation.latitude >= 0 ? "N" : "S"},{" "}
+                    {Math.abs(selectedLocation.longitude).toFixed(4)}°{selectedLocation.longitude >= 0 ? "E" : "W"}
                     {lastUpdated && (
                       <span> &middot; Updated {timeSinceUpdate === 0 ? "just now" : `${timeSinceUpdate}m ago`} &middot; Auto-refreshes every 10 min</span>
                     )}
@@ -1883,9 +1883,9 @@ export default function TransomCalculator() {
                     <div style={{ background: "#020617", borderRadius: 8, padding: "12px 14px", textAlign: "center" }}>
                       <div style={{ color: "#64748b", fontSize: 10, marginBottom: 4 }}>TEMPERATURE</div>
                       <div style={{ color: getTempColor(c.temperature_2m), fontSize: 28, fontWeight: 800 }}>
-                        {c.temperature_2m.toFixed(1)}\u00b0
+                        {c.temperature_2m.toFixed(1)}°
                       </div>
-                      <div style={{ color: "#64748b", fontSize: 10 }}>Feels {c.apparent_temperature.toFixed(1)}\u00b0</div>
+                      <div style={{ color: "#64748b", fontSize: 10 }}>Feels {c.apparent_temperature.toFixed(1)}°</div>
                     </div>
                     <div style={{ background: "#020617", borderRadius: 8, padding: "12px 14px", textAlign: "center" }}>
                       <div style={{ color: "#64748b", fontSize: 10, marginBottom: 4 }}>HUMIDITY</div>
@@ -1897,9 +1897,9 @@ export default function TransomCalculator() {
                     <div style={{ background: "#020617", borderRadius: 8, padding: "12px 14px", textAlign: "center" }}>
                       <div style={{ color: "#64748b", fontSize: 10, marginBottom: 4 }}>DEW POINT</div>
                       <div style={{ color: "#e2e8f0", fontSize: 28, fontWeight: 800 }}>
-                        {c.dew_point_2m.toFixed(1)}\u00b0
+                        {c.dew_point_2m.toFixed(1)}°
                       </div>
-                      <div style={{ color: "#64748b", fontSize: 10 }}>Margin: {dewMargin}\u00b0C</div>
+                      <div style={{ color: "#64748b", fontSize: 10 }}>Margin: {dewMargin}°C</div>
                     </div>
                     <div style={{ background: "#020617", borderRadius: 8, padding: "12px 14px", textAlign: "center" }}>
                       <div style={{ color: "#64748b", fontSize: 10, marginBottom: 4 }}>WIND</div>
@@ -1927,10 +1927,10 @@ export default function TransomCalculator() {
                     <div style={{ color: "#94a3b8", fontSize: 12, lineHeight: 1.5 }}>
                       {verdict.msg}
                       {isRaining && (
-                        <><br/><strong style={{ color: "#3b82f6" }}>Currently raining/precipitating \u2014 do NOT lay up resin in wet conditions.</strong></>
+                        <><br/><strong style={{ color: "#3b82f6" }}>Currently raining/precipitating — do NOT lay up resin in wet conditions.</strong></>
                       )}
                       {parseFloat(dewMargin) < 3 && parseFloat(dewMargin) >= 2 && (
-                        <><br/>Dew point margin is tight ({dewMargin}\u00b0C). Monitor for substrate condensation.</>
+                        <><br/>Dew point margin is tight ({dewMargin}°C). Monitor for substrate condensation.</>
                       )}
                     </div>
                   </div>
@@ -1948,16 +1948,16 @@ export default function TransomCalculator() {
             {hourlyToday.length > 0 && (
               <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
-                  <h3 style={{ color: "#e2e8f0", fontSize: 14, margin: 0, fontWeight: 700 }}>TODAY \u2014 HOURLY FORECAST</h3>
+                  <h3 style={{ color: "#e2e8f0", fontSize: 14, margin: 0, fontWeight: 700 }}>TODAY — HOURLY FORECAST</h3>
                   {bestWindow && (
                     <div style={{ color: "#22c55e", fontSize: 12, fontWeight: 600 }}>
-                      Best window: {String(bestWindow.startHour).padStart(2, "0")}:00 \u2013 {String(bestWindow.endHour).padStart(2, "0")}:00
-                      ({bestWindow.hours}h, avg {bestWindow.avgTemp}\u00b0C)
+                      Best window: {String(bestWindow.startHour).padStart(2, "0")}:00 – {String(bestWindow.endHour).padStart(2, "0")}:00
+                      ({bestWindow.hours}h, avg {bestWindow.avgTemp}°C)
                     </div>
                   )}
                   {!bestWindow && (
                     <div style={{ color: "#ef4444", fontSize: 12, fontWeight: 600 }}>
-                      No workable window today (temp &lt;10\u00b0C or humidity &gt;85% all day)
+                      No workable window today (temp &lt;10°C or humidity &gt;85% all day)
                     </div>
                   )}
                 </div>
@@ -1978,7 +1978,7 @@ export default function TransomCalculator() {
                       return (
                         <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", opacity: isDaylight ? 1 : 0.4 }}>
                           <div style={{ color: "#e2e8f0", fontSize: 9, fontWeight: 600, marginBottom: 2 }}>
-                            {h.temp.toFixed(0)}\u00b0
+                            {h.temp.toFixed(0)}°
                           </div>
                           <div style={{
                             width: "100%", height: barH, background: col,
@@ -2017,15 +2017,15 @@ export default function TransomCalculator() {
                 <div style={{ display: "flex", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                     <div style={{ width: 10, height: 10, background: "#22c55e", borderRadius: 2, opacity: 0.7 }} />
-                    <span style={{ color: "#94a3b8", fontSize: 10 }}>{"\u2265"}15\u00b0C Ideal</span>
+                    <span style={{ color: "#94a3b8", fontSize: 10 }}>{"≥"}15°C Ideal</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                     <div style={{ width: 10, height: 10, background: "#f59e0b", borderRadius: 2, opacity: 0.7 }} />
-                    <span style={{ color: "#94a3b8", fontSize: 10 }}>10\u201315\u00b0C Workable</span>
+                    <span style={{ color: "#94a3b8", fontSize: 10 }}>10–15°C Workable</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                     <div style={{ width: 10, height: 10, background: "#ef4444", borderRadius: 2, opacity: 0.7 }} />
-                    <span style={{ color: "#94a3b8", fontSize: 10 }}>&lt;10\u00b0C Risky</span>
+                    <span style={{ color: "#94a3b8", fontSize: 10 }}>&lt;10°C Risky</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                     <div style={{ width: 10, height: 10, border: "1.5px solid #22c55e", borderRadius: 2, boxSizing: "border-box" }} />
@@ -2087,7 +2087,7 @@ export default function TransomCalculator() {
                   <h3 style={{ color: "#e2e8f0", fontSize: 14, margin: 0, fontWeight: 700 }}>3-WEEK OUTLOOK</h3>
                   {bestDay && (
                     <div style={{ color: "#22c55e", fontSize: 12, fontWeight: 600 }}>
-                      Best day: {bestDay.dayName} {bestDay.dayNum} {bestDay.month} ({bestDay.high.toFixed(0)}\u00b0C high)
+                      Best day: {bestDay.dayName} {bestDay.dayNum} {bestDay.month} ({bestDay.high.toFixed(0)}°C high)
                     </div>
                   )}
                 </div>
@@ -2117,7 +2117,7 @@ export default function TransomCalculator() {
                         {i === 0 ? "Today" : `${d.dayName} ${d.dayNum}`}
                       </div>
                       <div style={{ width: 35, color: "#94a3b8", fontSize: 12, textAlign: "right" }}>
-                        {d.low.toFixed(0)}\u00b0
+                        {d.low.toFixed(0)}°
                       </div>
                       <div style={{ flex: 1, height: 8, background: "#1e293b", borderRadius: 4, position: "relative" }}>
                         <div style={{
@@ -2126,7 +2126,7 @@ export default function TransomCalculator() {
                         }} />
                       </div>
                       <div style={{ width: 35, color: "#e2e8f0", fontSize: 12, fontWeight: 600 }}>
-                        {d.high.toFixed(0)}\u00b0
+                        {d.high.toFixed(0)}°
                       </div>
                       <div style={{ width: 100, fontSize: 11, color: "#64748b" }}>{d.weather}</div>
                       <div style={{
@@ -2145,40 +2145,40 @@ export default function TransomCalculator() {
             {/* ── RESIN CURE REFERENCE ── */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
               <div style={{ background: "#0f172a", borderRadius: 12, padding: 16, border: "1px solid #22c55e40" }}>
-                <h4 style={{ color: "#22c55e", fontSize: 13, margin: "0 0 8px" }}>{"\u2713"} IDEAL ({"\u2265"}15\u00b0C, RH &lt;80%)</h4>
+                <h4 style={{ color: "#22c55e", fontSize: 13, margin: "0 0 8px" }}>{"✓"} IDEAL ({"≥"}15°C, RH &lt;80%)</h4>
                 <div style={{ color: "#94a3b8", fontSize: 12, lineHeight: 1.6 }}>
-                  Polyester: normal catalyst ratio (1\u20132% MEKP)<br/>
-                  Epoxy: standard hardener, 6\u20138hr pot life<br/>
-                  Gel time: ~15\u201320 min (polyester)<br/>
-                  Full cure: 24\u201348 hours<br/>
+                  Polyester: normal catalyst ratio (1–2% MEKP)<br/>
+                  Epoxy: standard hardener, 6–8hr pot life<br/>
+                  Gel time: ~15–20 min (polyester)<br/>
+                  Full cure: 24–48 hours<br/>
                   <strong style={{ color: "#e2e8f0" }}>Optimal working conditions</strong>
                 </div>
               </div>
               <div style={{ background: "#0f172a", borderRadius: 12, padding: 16, border: "1px solid #f59e0b40" }}>
-                <h4 style={{ color: "#f59e0b", fontSize: 13, margin: "0 0 8px" }}>{"!"} WORKABLE (10\u201315\u00b0C)</h4>
+                <h4 style={{ color: "#f59e0b", fontSize: 13, margin: "0 0 8px" }}>{"!"} WORKABLE (10–15°C)</h4>
                 <div style={{ color: "#94a3b8", fontSize: 12, lineHeight: 1.6 }}>
-                  Polyester: increase catalyst 0.5\u20131%<br/>
+                  Polyester: increase catalyst 0.5–1%<br/>
                   Epoxy: slow/winter hardener required<br/>
-                  Gel time: 25\u201340 min (polyester)<br/>
-                  Full cure: 48\u201396 hours<br/>
-                  <strong style={{ color: "#e2e8f0" }}>Work midday, allow 50\u2013100% extra cure</strong>
+                  Gel time: 25–40 min (polyester)<br/>
+                  Full cure: 48–96 hours<br/>
+                  <strong style={{ color: "#e2e8f0" }}>Work midday, allow 50–100% extra cure</strong>
                 </div>
               </div>
               <div style={{ background: "#0f172a", borderRadius: 12, padding: 16, border: "1px solid #ef444440" }}>
-                <h4 style={{ color: "#ef4444", fontSize: 13, margin: "0 0 8px" }}>{"\u2717"} RISKY (&lt;10\u00b0C)</h4>
+                <h4 style={{ color: "#ef4444", fontSize: 13, margin: "0 0 8px" }}>{"✗"} RISKY (&lt;10°C)</h4>
                 <div style={{ color: "#94a3b8", fontSize: 12, lineHeight: 1.6 }}>
                   Polyester: high risk of undercure<br/>
-                  Epoxy: will not cross-link below 5\u00b0C<br/>
+                  Epoxy: will not cross-link below 5°C<br/>
                   Gel time: &gt;60 min or may not gel<br/>
                   Full cure: may never fully cure<br/>
-                  <strong style={{ color: "#e2e8f0" }}>Heated workspace essential (min 10\u00b0C substrate)</strong>
+                  <strong style={{ color: "#e2e8f0" }}>Heated workspace essential (min 10°C substrate)</strong>
                 </div>
               </div>
             </div>
 
             {/* Dew point reference */}
             <div style={{ background: "#1e293b", borderRadius: 8, padding: 14, marginTop: 12, fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>
-              <strong style={{ color: "#f59e0b" }}>Dew point rule:</strong> Substrate temperature must be at least 3\u00b0C above the dew point to prevent moisture condensation on the surface.
+              <strong style={{ color: "#f59e0b" }}>Dew point rule:</strong> Substrate temperature must be at least 3°C above the dew point to prevent moisture condensation on the surface.
               Moisture on the layup surface will cause delamination, fisheyes, and incomplete bonding.
               {" "}<strong style={{ color: "#e2e8f0" }}>Always check dew point margin before mixing resin.</strong>
               <br/>
@@ -2208,7 +2208,7 @@ export default function TransomCalculator() {
                   <ResultBox label="Width (beam)" value={transomWidth} unit="mm" />
                   <ResultBox label="Centre height" value={centreHeight} unit="mm" />
                   <ResultBox label="Side height" value={sideHeight} unit="mm" />
-                  <ResultBox label="Rake angle" value={transomAngle} unit={"\u00b0"} />
+                  <ResultBox label="Rake angle" value={transomAngle} unit={"°"} />
                   <ResultBox label="Centre slope" value={calcs.centreSlopeHeight} unit="mm" highlight />
                   <ResultBox label="Thickness" value={thickness} unit="mm" />
                   <ResultBox label="Material" value={material.name.split("(")[0].trim()} unit="" />
@@ -2224,7 +2224,7 @@ export default function TransomCalculator() {
                   <ResultBox label="Setup" value={ENGINE_CONFIGS.find(c => c.id === engineConfig)?.name || "Custom"} unit="" />
                   {hasCutout && <ResultBox label="Cutout size (each)" value={`${cutoutWidth} x ${cutoutHeight}`} unit="mm" />}
                   {hasCutout && <ResultBox label="Cutout count" value={cutoutCount} unit="" />}
-                  <ResultBox label="Total cutout area" value={calcs.cutoutArea_m2} unit="m\u00b2" />
+                  <ResultBox label="Total cutout area" value={calcs.cutoutArea_m2} unit="m²" />
                 </div>
               </div>
 
@@ -2234,8 +2234,8 @@ export default function TransomCalculator() {
                   Areas &amp; Volumes
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 8 }}>
-                  <ResultBox label="Gross area (pentagon)" value={calcs.grossArea_m2} unit="m\u00b2" />
-                  <ResultBox label="Net panel area" value={calcs.netArea_m2} unit="m\u00b2" highlight />
+                  <ResultBox label="Gross area (pentagon)" value={calcs.grossArea_m2} unit="m²" />
+                  <ResultBox label="Net panel area" value={calcs.netArea_m2} unit="m²" highlight />
                   <ResultBox label="Cavity volume" value={calcs.cavityLitres} unit="litres" />
                 </div>
               </div>
@@ -2288,7 +2288,7 @@ export default function TransomCalculator() {
                         {verdict.status}
                       </span>
                       <span style={{ color: "#e2e8f0", fontSize: 14, fontWeight: 600 }}>
-                        {c.temperature_2m.toFixed(1)}{"\u00b0"}C &middot; {c.relative_humidity_2m}% RH &middot; Dew {c.dew_point_2m.toFixed(1)}{"\u00b0"}C
+                        {c.temperature_2m.toFixed(1)}{"°"}C &middot; {c.relative_humidity_2m}% RH &middot; Dew {c.dew_point_2m.toFixed(1)}{"°"}C
                       </span>
                       <span style={{ color: verdict.color, fontSize: 12 }}>{verdict.label}</span>
                     </div>
