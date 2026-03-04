@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import transomDiagram from "./assets/image.jpg";
 
 // ═══════════════════════════════════════════
 // CONSTANTS
@@ -401,11 +402,21 @@ function OnboardingOverlay({ step, totalSteps, onNext, onPrev, onSkip, onFinish 
 // MAIN COMPONENT
 // ═══════════════════════════════════════════
 
+// Load saved state from localStorage
+const STORAGE_KEY = "transom-calc-state";
+function loadSaved() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+const _saved = loadSaved();
+
 export default function TransomCalculator() {
-  const [tab, setTab] = useState("calc");
+  const [tab, setTab] = useState("quick");
 
   // ── Onboarding tutorial state ──
-  const [showTutorial, setShowTutorial] = useState(true);
+  const [showTutorial, setShowTutorial] = useState(!_saved._tutorialDone);
   const [tutorialStep, setTutorialStep] = useState(0);
 
   const closeTutorial = useCallback(() => {
@@ -430,36 +441,36 @@ export default function TransomCalculator() {
   }, [tutorialStep]);
 
   // Area calculator state
-  const [transomWidth, setTransomWidth] = useState(1800);
-  const [centreHeight, setCentreHeight] = useState(508);
-  const [sideHeight, setSideHeight] = useState(350);
-  const [transomAngle, setTransomAngle] = useState(20);
-  const [thickness, setThickness] = useState(50);
-  const [materialId, setMaterialId] = useState("titanpour");
+  const [transomWidth, setTransomWidth] = useState(_saved.transomWidth ?? 1800);
+  const [centreHeight, setCentreHeight] = useState(_saved.centreHeight ?? 508);
+  const [sideHeight, setSideHeight] = useState(_saved.sideHeight ?? 350);
+  const [transomAngle, setTransomAngle] = useState(_saved.transomAngle ?? 20);
+  const [thickness, setThickness] = useState(_saved.thickness ?? 50);
+  const [materialId, setMaterialId] = useState(_saved.materialId ?? "titanpour");
 
   // Engine cutout
-  const [engineConfig, setEngineConfig] = useState("single_ob");
-  const [cutoutWidth, setCutoutWidth] = useState(660);
-  const [cutoutHeight, setCutoutHeight] = useState(380);
-  const [cutoutCount, setCutoutCount] = useState(1);
+  const [engineConfig, setEngineConfig] = useState(_saved.engineConfig ?? "single_ob");
+  const [cutoutWidth, setCutoutWidth] = useState(_saved.cutoutWidth ?? 660);
+  const [cutoutHeight, setCutoutHeight] = useState(_saved.cutoutHeight ?? 380);
+  const [cutoutCount, setCutoutCount] = useState(_saved.cutoutCount ?? 1);
   const hasCutout = cutoutCount > 0;
 
   // Resin
-  const [wastagePercent, setWastagePercent] = useState(10);
+  const [wastagePercent, setWastagePercent] = useState(_saved.wastagePercent ?? 10);
 
   // Rod spacing
-  const [rodSpacing, setRodSpacing] = useState(70);
-  const [hRodDiameter, setHRodDiameter] = useState(7);
-  const [vRodDiameter, setVRodDiameter] = useState(7);
-  const [shellThickness, setShellThickness] = useState(6); // existing outer GRP skin (mm)
-  const [minCover, setMinCover] = useState(10); // min resin between rod and mould/shell wall (mm)
+  const [rodSpacing, setRodSpacing] = useState(_saved.rodSpacing ?? 70);
+  const [hRodDiameter, setHRodDiameter] = useState(_saved.hRodDiameter ?? 7);
+  const [vRodDiameter, setVRodDiameter] = useState(_saved.vRodDiameter ?? 7);
+  const [shellThickness, setShellThickness] = useState(_saved.shellThickness ?? 6);
+  const [minCover, setMinCover] = useState(_saved.minCover ?? 10);
   // Keep rodDiameter as derived value for backward compat (use the larger)
   const rodDiameter = Math.max(hRodDiameter, vRodDiameter);
 
   // ── LIVE WEATHER STATE ──
   const [locationQuery, setLocationQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  const [selectedLocation, setSelectedLocation] = useState(DEFAULT_LOCATION);
+  const [selectedLocation, setSelectedLocation] = useState(_saved.selectedLocation ?? DEFAULT_LOCATION);
   const [forecastData, setForecastData] = useState(null);
   const [loadingForecast, setLoadingForecast] = useState(false);
   const [forecastError, setForecastError] = useState(null);
@@ -467,8 +478,22 @@ export default function TransomCalculator() {
   const [lastUpdated, setLastUpdated] = useState(null);
 
   // Mix calculator
-  const [batchWeight, setBatchWeight] = useState(1000);
-  const [maxPourHeight, setMaxPourHeight] = useState(140); // mm vertical per pour
+  const [batchWeight, setBatchWeight] = useState(_saved.batchWeight ?? 1000);
+  const [maxPourHeight, setMaxPourHeight] = useState(_saved.maxPourHeight ?? 140);
+
+  // ── Persist all inputs to localStorage ──
+  useEffect(() => {
+    const state = {
+      transomWidth, centreHeight, sideHeight, transomAngle, thickness, materialId,
+      engineConfig, cutoutWidth, cutoutHeight, cutoutCount, wastagePercent,
+      rodSpacing, hRodDiameter, vRodDiameter, shellThickness, minCover,
+      selectedLocation, batchWeight, maxPourHeight, _tutorialDone: true,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }, [transomWidth, centreHeight, sideHeight, transomAngle, thickness, materialId,
+      engineConfig, cutoutWidth, cutoutHeight, cutoutCount, wastagePercent,
+      rodSpacing, hRodDiameter, vRodDiameter, shellThickness, minCover,
+      selectedLocation, batchWeight, maxPourHeight]);
 
   const searchTimeoutRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -922,12 +947,66 @@ export default function TransomCalculator() {
   }, []);
 
   const tabs = [
+    { id: "quick", label: "Quick Calc" },
     { id: "calc", label: "Area & Volume" },
     { id: "rods", label: "Rod Spacing" },
     { id: "mix", label: "Mix Calculator" },
     { id: "temp", label: "Live Weather" },
     { id: "summary", label: "Job Summary" },
   ];
+
+  // ── Quick Calc: auto rod sizing from 1/3 rule ──
+  const quickCalc = useMemo(() => {
+    const cosA = Math.cos((transomAngle * Math.PI) / 180);
+    const pourDepth = thickness - shellThickness;
+    const stackedTarget = pourDepth / 3;          // 1/3 of gap for rods
+    const rodDiam = stackedTarget / 2;             // split between H and V
+    const rodDiamRounded = Math.floor(rodDiam);    // round down to whole mm
+    const actualStacked = rodDiamRounded * 2;
+    const actualCover = (pourDepth - actualStacked) / 2;
+
+    // Area
+    const centreSlopeH = centreHeight / cosA;
+    const sideSlopeH = sideHeight / cosA;
+    const grossArea_m2 = transomWidth * (centreSlopeH + sideSlopeH) / 2 / 1e6;
+
+    // Cutout
+    const cutSlopeH = cutoutCount > 0 ? cutoutHeight / cosA : 0;
+    const cutArea_m2 = cutoutCount > 0 ? (cutoutWidth * cutSlopeH * cutoutCount) / 1e6 : 0;
+    const netArea_m2 = grossArea_m2 - cutArea_m2;
+
+    // Volume
+    const cavityLitres = netArea_m2 * thickness;
+
+    // Rods (use auto diameter)
+    const ROD_GAP = 30;
+    const triH = centreHeight - sideHeight;
+    const hCount = Math.floor(centreSlopeH / rodSpacing) + 1;
+    let totalH = 0;
+    for (let i = 0; i < hCount; i++) {
+      const vertY = i * rodSpacing * cosA;
+      const pw = vertY <= sideHeight ? transomWidth : transomWidth * (centreHeight - vertY) / (triH || 1);
+      totalH += Math.max(pw - ROD_GAP, 0);
+    }
+    const vCount = Math.floor(transomWidth / rodSpacing) + 1;
+    let totalV = 0;
+    for (let i = 0; i < vCount; i++) {
+      const x = i * rodSpacing;
+      const t = 1 - Math.abs(2 * x / transomWidth - 1);
+      totalV += (sideHeight + (centreHeight - sideHeight) * t) / cosA;
+    }
+    const crossSection = Math.PI * (rodDiamRounded / 2) ** 2;
+    const rodDispLitres = crossSection * (totalH + totalV) / 1e6;
+    const pourLitres = cavityLitres - rodDispLitres;
+    const resinWithWastage = pourLitres * (1 + wastagePercent / 100);
+
+    return {
+      pourDepth, stackedTarget, rodDiam, rodDiamRounded, actualStacked, actualCover,
+      centreSlopeH, sideSlopeH, grossArea_m2, netArea_m2, cavityLitres,
+      hCount, vCount, totalH, totalV, rodDispLitres, pourLitres, resinWithWastage,
+    };
+  }, [transomWidth, centreHeight, sideHeight, transomAngle, thickness, shellThickness,
+      cutoutWidth, cutoutHeight, cutoutCount, rodSpacing, wastagePercent]);
 
   // ── Time since last update ──
   const timeSinceUpdate = lastUpdated
@@ -998,12 +1077,125 @@ export default function TransomCalculator() {
           ))}
         </div>
 
+        {/* ===== QUICK CALC TAB ===== */}
+        {tab === "quick" && (
+          <div>
+            <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+              {/* Left: inputs */}
+              <div style={{ flex: 1, minWidth: 280 }}>
+                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
+                  <h3 style={{ color: "#f59e0b", fontSize: 14, margin: "0 0 16px", fontWeight: 700 }}>MEASUREMENTS</h3>
+                  <div style={{ marginBottom: 16, textAlign: "center" }}>
+                    <img src={transomDiagram} alt="Where to measure" style={{ width: "100%", maxWidth: 320, borderRadius: 8, border: "1px solid #1e293b" }} />
+                  </div>
+                  <NumberInput label="Width" value={transomWidth} onChange={setTransomWidth} unit="mm" min={500} max={5000} />
+                  <NumberInput label="Centre height (deepest)" value={centreHeight} onChange={setCentreHeight} unit="mm" min={200} max={1500} />
+                  <NumberInput label="Side height (edges)" value={sideHeight} onChange={setSideHeight} unit="mm" min={50} max={1500} />
+                  <NumberInput label="Depth (total thickness)" value={thickness} onChange={setThickness} unit="mm" min={5} max={150} step={0.5} />
+                  <NumberInput label="Outer shell" value={shellThickness} onChange={setShellThickness} unit="mm" min={0} max={20} />
+                  <NumberInput label="Rake angle" value={transomAngle} onChange={setTransomAngle} unit={"\u00b0"} min={0} max={35} />
+                </div>
+              </div>
+
+              {/* Right: auto results */}
+              <div style={{ flex: 1, minWidth: 280 }}>
+                {/* Auto rod sizing */}
+                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
+                  <h3 style={{ color: "#a855f7", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>AUTO ROD SIZING (1/3 RULE)</h3>
+                  <div style={{
+                    padding: "12px 16px", background: "#1e293b", borderRadius: 8, marginBottom: 12,
+                    fontSize: 12, color: "#94a3b8", lineHeight: 1.8, fontFamily: "monospace",
+                  }}>
+                    <div>Pour depth = {thickness} &minus; {shellThickness} = <strong style={{ color: "#f59e0b" }}>{quickCalc.pourDepth}mm</strong></div>
+                    <div>1/3 for rods = {quickCalc.pourDepth} &divide; 3 = <strong style={{ color: "#f59e0b" }}>{quickCalc.stackedTarget.toFixed(1)}mm</strong> stacked</div>
+                    <div>Each rod = {quickCalc.stackedTarget.toFixed(1)} &divide; 2 = <strong style={{ color: "#f59e0b" }}>{quickCalc.rodDiam.toFixed(1)}mm</strong></div>
+                    <div>Rounded down = <strong style={{ color: "#22c55e", fontSize: 16 }}>{quickCalc.rodDiamRounded}mm rods</strong></div>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                    <ResultBox label="Rod diameter" value={quickCalc.rodDiamRounded} unit="mm" highlight />
+                    <ResultBox label="Stacked" value={quickCalc.actualStacked} unit="mm" />
+                    <ResultBox label="Cover each side" value={quickCalc.actualCover.toFixed(1)} unit="mm" />
+                  </div>
+                  {quickCalc.actualCover < 10 && (
+                    <div style={{ marginTop: 8, padding: "8px 12px", background: "#ef444420", border: "1px solid #ef444460", borderRadius: 6, fontSize: 11, color: "#fca5a5" }}>
+                      Cover is under 10mm — consider thinner rods or thicker transom.
+                    </div>
+                  )}
+                </div>
+
+                {/* Key results */}
+                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
+                  <h3 style={{ color: "#3b82f6", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>RESULTS</h3>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                    <ResultBox label="Net area" value={quickCalc.netArea_m2.toFixed(4)} unit="m\u00b2" />
+                    <ResultBox label="Cavity volume" value={quickCalc.cavityLitres.toFixed(2)} unit="litres" />
+                    <ResultBox label="Rod displacement" value={quickCalc.rodDispLitres.toFixed(2)} unit="litres" />
+                    <ResultBox label="Pour volume" value={quickCalc.pourLitres.toFixed(2)} unit="litres" highlight />
+                    <ResultBox label="Resin + wastage" value={quickCalc.resinWithWastage.toFixed(2)} unit="litres" highlight />
+                    <ResultBox label="Rods" value={`${quickCalc.hCount}H + ${quickCalc.vCount}V`} unit="" />
+                  </div>
+                </div>
+
+                {/* Visual: 1/3 rule diagram */}
+                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b" }}>
+                  <h3 style={{ color: "#64748b", fontSize: 12, margin: "0 0 12px", fontWeight: 700 }}>CROSS SECTION</h3>
+                  <svg viewBox="0 0 200 120" style={{ width: "100%", maxWidth: 300 }}>
+                    {/* Outer shell */}
+                    <rect x="20" y="10" width="160" height="100" rx="2" fill="none" stroke="#475569" strokeWidth="1" />
+                    {/* Pour depth zone */}
+                    {(() => {
+                      const total = 100;
+                      const shellFrac = shellThickness / thickness;
+                      const pourFrac = quickCalc.pourDepth / thickness;
+                      const thirdH = pourFrac * total / 3;
+                      const shellH = shellFrac * total;
+                      const yShell = 10 + shellH;
+                      const yTop = yShell;
+                      const yRodTop = yShell + thirdH;
+                      const yRodBot = yRodTop + thirdH;
+                      const yBot = yShell + pourFrac * total;
+                      return (
+                        <>
+                          {/* Shell */}
+                          <rect x="20" y="10" width="160" height={shellH} fill="#f59e0b20" stroke="none" />
+                          <text x="100" y={10 + shellH / 2 + 3} textAnchor="middle" fill="#f59e0b" fontSize="8">shell {shellThickness}mm</text>
+                          {/* Top 1/3 cover */}
+                          <rect x="20" y={yTop} width="160" height={thirdH} fill="#3b82f620" stroke="none" />
+                          <text x="100" y={yTop + thirdH / 2 + 3} textAnchor="middle" fill="#3b82f6" fontSize="7">1/3 cover</text>
+                          {/* Middle 1/3 rods */}
+                          <rect x="20" y={yRodTop} width="160" height={thirdH} fill="#a855f730" stroke="none" />
+                          <line x1="40" y1={yRodTop + thirdH * 0.35} x2="160" y2={yRodTop + thirdH * 0.35} stroke="#a855f7" strokeWidth="2" />
+                          <line x1="40" y1={yRodTop + thirdH * 0.65} x2="160" y2={yRodTop + thirdH * 0.65} stroke="#a855f7" strokeWidth="2" strokeDasharray="4 3" />
+                          <text x="100" y={yRodTop + thirdH / 2 + 3} textAnchor="middle" fill="#a855f7" fontSize="7">1/3 rods ({quickCalc.rodDiamRounded}+{quickCalc.rodDiamRounded}mm)</text>
+                          {/* Bottom 1/3 cover */}
+                          <rect x="20" y={yRodBot} width="160" height={thirdH} fill="#3b82f620" stroke="none" />
+                          <text x="100" y={yRodBot + thirdH / 2 + 3} textAnchor="middle" fill="#3b82f6" fontSize="7">1/3 cover</text>
+                        </>
+                      );
+                    })()}
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ===== AREA & VOLUME TAB ===== */}
         {tab === "calc" && (
           <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
             <div style={{ flex: 1, minWidth: 280 }}>
               <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b" }}>
                 <h3 style={{ color: "#f59e0b", fontSize: 14, margin: "0 0 16px", fontWeight: 700 }}>TRANSOM DIMENSIONS</h3>
+                <div style={{ marginBottom: 16, textAlign: "center" }}>
+                  <img
+                    src={transomDiagram}
+                    alt="Transom measurement guide — measure width across top, centre height at deepest point, side height at edges"
+                    style={{ width: "100%", maxWidth: 360, borderRadius: 8, border: "1px solid #1e293b" }}
+                  />
+                  <div style={{ color: "#64748b", fontSize: 11, marginTop: 6 }}>
+                    Measure width across the top, centre height at the deepest point, side height at the edges
+                  </div>
+                </div>
                 <NumberInput label="Width (beam at transom)" value={transomWidth} onChange={setTransomWidth} unit="mm" min={500} max={5000} />
                 <NumberInput label="Centre height (deepest)" value={centreHeight} onChange={setCentreHeight} unit="mm" min={200} max={1500} />
                 <NumberInput label="Side height (edges)" value={sideHeight} onChange={setSideHeight} unit="mm" min={50} max={1500} />
