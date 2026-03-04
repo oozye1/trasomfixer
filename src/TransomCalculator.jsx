@@ -1128,83 +1128,19 @@ export default function TransomCalculator() {
                 </div>
               </div>
 
-              {/* Right: auto results */}
+              {/* Right: key results */}
               <div style={{ flex: 1, minWidth: 280 }}>
-                {/* Auto rod sizing */}
-                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
-                  <h3 style={{ color: "#a855f7", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>AUTO ROD SIZING (1/3 RULE)</h3>
-                  <div style={{
-                    padding: "12px 16px", background: "#1e293b", borderRadius: 8, marginBottom: 12,
-                    fontSize: 12, color: "#94a3b8", lineHeight: 1.8, fontFamily: "monospace",
-                  }}>
-                    <div>Pour depth = {thickness} &minus; {shellThickness} = <strong style={{ color: "#f59e0b" }}>{quickCalc.pourDepth}mm</strong></div>
-                    <div>1/3 for rods = {quickCalc.pourDepth} &divide; 3 = <strong style={{ color: "#f59e0b" }}>{quickCalc.stackedTarget.toFixed(1)}mm</strong> stacked</div>
-                    <div>Each rod = {quickCalc.stackedTarget.toFixed(1)} &divide; 2 = <strong style={{ color: "#f59e0b" }}>{quickCalc.rodDiam.toFixed(1)}mm</strong></div>
-                    <div>Rounded down = <strong style={{ color: "#22c55e", fontSize: 16 }}>{quickCalc.rodDiamRounded}mm rods</strong></div>
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                    <ResultBox label="Rod diameter" value={quickCalc.rodDiamRounded} unit="mm" highlight />
-                    <ResultBox label="Stacked" value={quickCalc.actualStacked} unit="mm" />
-                    <ResultBox label="Cover each side" value={quickCalc.actualCover.toFixed(1)} unit="mm" />
-                  </div>
-                  {quickCalc.actualCover < 10 && (
-                    <div style={{ marginTop: 8, padding: "8px 12px", background: "#ef444420", border: "1px solid #ef444460", borderRadius: 6, fontSize: 11, color: "#fca5a5" }}>
-                      Cover is under 10mm — consider thinner rods or thicker transom.
-                    </div>
-                  )}
-                </div>
-
-                {/* Key results */}
                 <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
                   <h3 style={{ color: "#3b82f6", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>RESULTS</h3>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                     <ResultBox label="Net area" value={quickCalc.netArea_m2.toFixed(4)} unit="m²" />
                     <ResultBox label="Cavity volume" value={quickCalc.cavityLitres.toFixed(2)} unit="litres" />
+                    <ResultBox label="Rod diameter (auto)" value={quickCalc.rodDiamRounded} unit="mm" highlight />
                     <ResultBox label="Rod displacement" value={quickCalc.rodDispLitres.toFixed(2)} unit="litres" />
                     <ResultBox label="Pour volume" value={quickCalc.pourLitres.toFixed(2)} unit="litres" highlight />
                     <ResultBox label="Resin + wastage" value={quickCalc.resinWithWastage.toFixed(2)} unit="litres" highlight />
                     <ResultBox label="Rods" value={`${quickCalc.hCount}H + ${quickCalc.vCount}V`} unit="" />
                   </div>
-                </div>
-
-                {/* Visual: 1/3 rule diagram */}
-                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b" }}>
-                  <h3 style={{ color: "#64748b", fontSize: 12, margin: "0 0 12px", fontWeight: 700 }}>CROSS SECTION</h3>
-                  <svg viewBox="0 0 200 120" style={{ width: "100%", maxWidth: 300 }}>
-                    {/* Outer shell */}
-                    <rect x="20" y="10" width="160" height="100" rx="2" fill="none" stroke="#475569" strokeWidth="1" />
-                    {/* Pour depth zone */}
-                    {(() => {
-                      const total = 100;
-                      const shellFrac = shellThickness / thickness;
-                      const pourFrac = quickCalc.pourDepth / thickness;
-                      const thirdH = pourFrac * total / 3;
-                      const shellH = shellFrac * total;
-                      const yShell = 10 + shellH;
-                      const yTop = yShell;
-                      const yRodTop = yShell + thirdH;
-                      const yRodBot = yRodTop + thirdH;
-                      const yBot = yShell + pourFrac * total;
-                      return (
-                        <>
-                          {/* Shell */}
-                          <rect x="20" y="10" width="160" height={shellH} fill="#f59e0b20" stroke="none" />
-                          <text x="100" y={10 + shellH / 2 + 3} textAnchor="middle" fill="#f59e0b" fontSize="8">shell {shellThickness}mm</text>
-                          {/* Top 1/3 cover */}
-                          <rect x="20" y={yTop} width="160" height={thirdH} fill="#3b82f620" stroke="none" />
-                          <text x="100" y={yTop + thirdH / 2 + 3} textAnchor="middle" fill="#3b82f6" fontSize="7">1/3 cover</text>
-                          {/* Middle 1/3 rods */}
-                          <rect x="20" y={yRodTop} width="160" height={thirdH} fill="#a855f730" stroke="none" />
-                          <line x1="40" y1={yRodTop + thirdH * 0.35} x2="160" y2={yRodTop + thirdH * 0.35} stroke="#a855f7" strokeWidth="2" />
-                          <line x1="40" y1={yRodTop + thirdH * 0.65} x2="160" y2={yRodTop + thirdH * 0.65} stroke="#a855f7" strokeWidth="2" strokeDasharray="4 3" />
-                          <text x="100" y={yRodTop + thirdH / 2 + 3} textAnchor="middle" fill="#a855f7" fontSize="7">1/3 rods ({quickCalc.rodDiamRounded}+{quickCalc.rodDiamRounded}mm)</text>
-                          {/* Bottom 1/3 cover */}
-                          <rect x="20" y={yRodBot} width="160" height={thirdH} fill="#3b82f620" stroke="none" />
-                          <text x="100" y={yRodBot + thirdH / 2 + 3} textAnchor="middle" fill="#3b82f6" fontSize="7">1/3 cover</text>
-                        </>
-                      );
-                    })()}
-                  </svg>
                 </div>
               </div>
             </div>
@@ -1493,6 +1429,62 @@ export default function TransomCalculator() {
                       })()}
                     </svg>
                   </div>
+                </div>
+
+                {/* Auto rod sizing (1/3 rule) */}
+                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 12 }}>
+                  <h3 style={{ color: "#a855f7", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>AUTO ROD SIZING (1/3 RULE)</h3>
+                  <div style={{
+                    padding: "12px 16px", background: "#1e293b", borderRadius: 8, marginBottom: 12,
+                    fontSize: 12, color: "#94a3b8", lineHeight: 1.8, fontFamily: "monospace",
+                  }}>
+                    <div>Pour depth = {thickness} &minus; {shellThickness} = <strong style={{ color: "#f59e0b" }}>{quickCalc.pourDepth}mm</strong></div>
+                    <div>1/3 for rods = {quickCalc.pourDepth} &divide; 3 = <strong style={{ color: "#f59e0b" }}>{quickCalc.stackedTarget.toFixed(1)}mm</strong> stacked</div>
+                    <div>Each rod = {quickCalc.stackedTarget.toFixed(1)} &divide; 2 = <strong style={{ color: "#f59e0b" }}>{quickCalc.rodDiam.toFixed(1)}mm</strong></div>
+                    <div>Rounded down = <strong style={{ color: "#22c55e", fontSize: 16 }}>{quickCalc.rodDiamRounded}mm rods</strong></div>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                    <ResultBox label="Rod diameter" value={quickCalc.rodDiamRounded} unit="mm" highlight />
+                    <ResultBox label="Stacked" value={quickCalc.actualStacked} unit="mm" />
+                    <ResultBox label="Cover each side" value={quickCalc.actualCover.toFixed(1)} unit="mm" />
+                  </div>
+                  {quickCalc.actualCover < 10 && (
+                    <div style={{ marginTop: 8, padding: "8px 12px", background: "#ef444420", border: "1px solid #ef444460", borderRadius: 6, fontSize: 11, color: "#fca5a5" }}>
+                      Cover is under 10mm — consider thinner rods or thicker transom.
+                    </div>
+                  )}
+                </div>
+
+                {/* 1/3 rule cross section */}
+                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 12 }}>
+                  <h3 style={{ color: "#64748b", fontSize: 12, margin: "0 0 12px", fontWeight: 700 }}>1/3 RULE CROSS SECTION</h3>
+                  <svg viewBox="0 0 200 120" style={{ width: "100%", maxWidth: 300 }}>
+                    <rect x="20" y="10" width="160" height="100" rx="2" fill="none" stroke="#475569" strokeWidth="1" />
+                    {(() => {
+                      const total = 100;
+                      const shellFrac = shellThickness / thickness;
+                      const pourFrac = quickCalc.pourDepth / thickness;
+                      const thirdH = pourFrac * total / 3;
+                      const shellH = shellFrac * total;
+                      const yShell = 10 + shellH;
+                      const yRodTop = yShell + thirdH;
+                      const yRodBot = yRodTop + thirdH;
+                      return (
+                        <>
+                          <rect x="20" y="10" width="160" height={shellH} fill="#f59e0b20" stroke="none" />
+                          <text x="100" y={10 + shellH / 2 + 3} textAnchor="middle" fill="#f59e0b" fontSize="8">shell {shellThickness}mm</text>
+                          <rect x="20" y={yShell} width="160" height={thirdH} fill="#3b82f620" stroke="none" />
+                          <text x="100" y={yShell + thirdH / 2 + 3} textAnchor="middle" fill="#3b82f6" fontSize="7">1/3 cover</text>
+                          <rect x="20" y={yRodTop} width="160" height={thirdH} fill="#a855f730" stroke="none" />
+                          <line x1="40" y1={yRodTop + thirdH * 0.35} x2="160" y2={yRodTop + thirdH * 0.35} stroke="#a855f7" strokeWidth="2" />
+                          <line x1="40" y1={yRodTop + thirdH * 0.65} x2="160" y2={yRodTop + thirdH * 0.65} stroke="#a855f7" strokeWidth="2" strokeDasharray="4 3" />
+                          <text x="100" y={yRodTop + thirdH / 2 + 3} textAnchor="middle" fill="#a855f7" fontSize="7">1/3 rods ({quickCalc.rodDiamRounded}+{quickCalc.rodDiamRounded}mm)</text>
+                          <rect x="20" y={yRodBot} width="160" height={thirdH} fill="#3b82f620" stroke="none" />
+                          <text x="100" y={yRodBot + thirdH / 2 + 3} textAnchor="middle" fill="#3b82f6" fontSize="7">1/3 cover</text>
+                        </>
+                      );
+                    })()}
+                  </svg>
                 </div>
               </div>
 
