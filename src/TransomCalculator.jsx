@@ -212,10 +212,10 @@ function getDayVerdict(high, low, weatherCode) {
 // SUB-COMPONENTS
 // ═══════════════════════════════════════════
 
-function NumberInput({ label, value, onChange, unit, min, max, step = 1 }) {
+function NumberInput({ label, value, onChange, unit, min, max, step = 1, labelColor }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-      <label style={{ color: "#94a3b8", fontSize: 13, minWidth: 160 }}>{label}</label>
+      <label style={{ color: labelColor || "#94a3b8", fontSize: 13, minWidth: 160, fontWeight: labelColor ? 700 : 400 }}>{label}</label>
       <input
         type="number" value={value}
         onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
@@ -1085,18 +1085,46 @@ export default function TransomCalculator() {
               <div style={{ flex: 1, minWidth: 280 }}>
                 <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
                   <h3 style={{ color: "#f59e0b", fontSize: 14, margin: "0 0 16px", fontWeight: 700 }}>MEASUREMENTS</h3>
-                  <div style={{ marginBottom: 16, textAlign: "center" }}>
-                    <img src={transomDiagram} alt="Where to measure" style={{ width: "100%", maxWidth: 320, borderRadius: 8, border: "1px solid #1e293b" }} />
+                  <div style={{ marginBottom: 12, textAlign: "center" }}>
+                    <img src={transomDiagram} alt="Where to measure" style={{ width: "100%", maxWidth: 360, borderRadius: 8, border: "1px solid #1e293b" }} />
                   </div>
-                  <NumberInput label="Width" value={transomWidth} onChange={setTransomWidth} unit="mm" min={500} max={5000} />
-                  <NumberInput label="Centre height (deepest)" value={centreHeight} onChange={setCentreHeight} unit="mm" min={200} max={1500} />
-                  <NumberInput label="Side height (edges)" value={sideHeight} onChange={setSideHeight} unit="mm" min={50} max={1500} />
+                  {/* Colour key matching diagram arrows */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 12px", marginBottom: 16, fontSize: 12 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 2, background: "#3b82f6", flexShrink: 0 }} />
+                      <span style={{ color: "#3b82f6", fontWeight: 700 }}>Blue</span>
+                      <span style={{ color: "#94a3b8" }}>= Width</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 2, background: "#22c55e", flexShrink: 0 }} />
+                      <span style={{ color: "#22c55e", fontWeight: 700 }}>Green</span>
+                      <span style={{ color: "#94a3b8" }}>= Centre height</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 2, background: "#ef4444", flexShrink: 0 }} />
+                      <span style={{ color: "#ef4444", fontWeight: 700 }}>Red</span>
+                      <span style={{ color: "#94a3b8" }}>= Side height</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 2, background: "#a855f7", flexShrink: 0 }} />
+                      <span style={{ color: "#a855f7", fontWeight: 700 }}>Purple</span>
+                      <span style={{ color: "#94a3b8" }}>= Cutout height</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 2, background: "#e2e8f0", flexShrink: 0 }} />
+                      <span style={{ color: "#e2e8f0", fontWeight: 700 }}>Black</span>
+                      <span style={{ color: "#94a3b8" }}>= Cutout width</span>
+                    </div>
+                  </div>
+                  <NumberInput label="Width" value={transomWidth} onChange={setTransomWidth} unit="mm" min={500} max={5000} labelColor="#3b82f6" />
+                  <NumberInput label="Centre height (deepest)" value={centreHeight} onChange={setCentreHeight} unit="mm" min={200} max={1500} labelColor="#22c55e" />
+                  <NumberInput label="Side height (edges)" value={sideHeight} onChange={setSideHeight} unit="mm" min={50} max={1500} labelColor="#ef4444" />
                   <NumberInput label="Depth (total thickness)" value={thickness} onChange={setThickness} unit="mm" min={5} max={150} step={0.5} />
                 </div>
                 <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
                   <h3 style={{ color: "#f59e0b", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>MOTORWELL CUTOUT</h3>
-                  <NumberInput label="Cutout width" value={cutoutWidth} onChange={setCutoutWidth} unit="mm" min={0} max={3000} />
-                  <NumberInput label="Cutout height" value={cutoutHeight} onChange={setCutoutHeight} unit="mm" min={0} max={1000} />
+                  <NumberInput label="Cutout width" value={cutoutWidth} onChange={setCutoutWidth} unit="mm" min={0} max={3000} labelColor="#e2e8f0" />
+                  <NumberInput label="Cutout height" value={cutoutHeight} onChange={setCutoutHeight} unit="mm" min={0} max={1000} labelColor="#a855f7" />
                 </div>
               </div>
 
