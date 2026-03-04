@@ -4,25 +4,6 @@ import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 // CONSTANTS
 // ═══════════════════════════════════════════
 
-const TRANSOM_SHAPES = [
-  {
-    id: "flat_vertical",
-    name: "Flat / Vertical",
-    desc: "Traditional flat panel, perpendicular to waterline. Common on utility boats, dinghies, and fishing vessels.",
-    angle: 0,
-    pros: ["Maximum strength", "Easy engine mounting", "Simple construction"],
-    cons: ["More drag", "Wave slap in following seas"],
-  },
-  {
-    id: "raked",
-    name: "Raked (Angled Aft)",
-    desc: "Tilted aft from vertical, typically 12\u201320\u00b0. The most common powerboat transom. Allows motor trim/tilt range.",
-    angle: 14,
-    pros: ["Allows prop trim range", "Sheds following seas", "Reserve buoyancy"],
-    cons: ["Reduces waterline length slightly"],
-  },
-];
-
 const MATERIALS = [
   { id: "titanpour", name: "TitanPour Resin System (pourable composite)", density: 1550, desc: "~1550 kg/m\u00b3 *" },
   { id: "frp_hand", name: "FRP Hand Layup (CSM + Polyester)", density: 1500, desc: "~1500 kg/m\u00b3" },
@@ -81,23 +62,15 @@ const TUTORIAL_STEPS = [
     accent: "#f59e0b",
   },
   {
-    title: "1. Choose Your Transom Shape",
-    subtitle: "Transom Shapes tab",
-    body: "Start by selecting the type of transom you're working on. Each shape shows typical rake angles, advantages, and trade-offs. This sets the foundation for all your calculations.",
-    icon: "shapes",
-    accent: "#f59e0b",
-    tab: "shapes",
-  },
-  {
-    title: "2. Calculate Area & Weight",
-    subtitle: "Area & Weight tab",
-    body: "Enter your transom dimensions (width, height, rake angle, thickness) and select your material. Choose an engine configuration to account for cutouts. The calculator handles all slope conversions automatically and shows net resin volume with wastage.",
+    title: "1. Calculate Area & Volume",
+    subtitle: "Area & Volume tab",
+    body: "Enter your transom dimensions (width, centre height, side height, rake angle, thickness). The pentagon shape (rectangle + V bottom) is calculated automatically. Choose an engine configuration to account for cutouts.",
     icon: "calc",
     accent: "#22c55e",
     tab: "calc",
   },
   {
-    title: "3. Plan Your Rod Grid",
+    title: "2. Plan Your Rod Grid",
     subtitle: "Rod Spacing tab",
     body: "Set the reinforcement rod spacing and diameter. The calculator works out how many rods you need, their cut lengths (accounting for the slope), and the total rod length to order. A face-on preview shows the grid layout.",
     icon: "grid",
@@ -105,7 +78,7 @@ const TUTORIAL_STEPS = [
     tab: "rods",
   },
   {
-    title: "4. Mix Calculator",
+    title: "3. Mix Calculator",
     subtitle: "Mix Calculator tab",
     body: "Enter your batch weight and the calculator works out the exact catalyst and retarder weights to put on the scales. Catalyst % is applied to the resin fraction only (58% of the batch) — not the total weight. Rod displacement is subtracted from the pour volume automatically.",
     icon: "mix",
@@ -113,7 +86,7 @@ const TUTORIAL_STEPS = [
     tab: "mix",
   },
   {
-    title: "5. Check Live Weather",
+    title: "4. Check Live Weather",
     subtitle: "Live Weather tab",
     body: "Search any location worldwide to get real-time temperature, humidity, and dew point — all critical for resin cure. The system gives a GO / CAUTION / NO-GO verdict, finds the best layup window, and shows a 3-week outlook. Data refreshes every 10 minutes.",
     icon: "weather",
@@ -121,7 +94,7 @@ const TUTORIAL_STEPS = [
     tab: "temp",
   },
   {
-    title: "6. Review Your Job Summary",
+    title: "5. Review Your Job Summary",
     subtitle: "Job Summary tab",
     body: "Everything in one place — transom specs, engine config, areas, resin order quantities, rod requirements, and current weather verdict. Use this as your job sheet before you start the pour.",
     icon: "summary",
@@ -237,67 +210,6 @@ function getDayVerdict(high, low, weatherCode) {
 // ═══════════════════════════════════════════
 // SUB-COMPONENTS
 // ═══════════════════════════════════════════
-
-function TransomProfile({ shape, size = 120 }) {
-  const angleRad = (shape.angle * Math.PI) / 180;
-  const topX = 50 + Math.sin(angleRad) * 35;
-  const botX = 50 - Math.sin(angleRad) * 5;
-  const waterY = 72;
-
-  return (
-    <svg viewBox="0 0 100 100" width={size} height={size} style={{ background: "#0a1628", borderRadius: 8 }}>
-      <rect x="0" y={waterY} width="100" height={100 - waterY} fill="#1a4a7a" opacity="0.4" />
-      <line x1="0" y1={waterY} x2="100" y2={waterY} stroke="#3b82f6" strokeWidth="0.8" strokeDasharray="3,2" />
-      <path d={`M 15 85 Q 30 92 50 90 Q 70 92 85 85`} fill="none" stroke="#64748b" strokeWidth="1.2" />
-      {shape.id === "walkthrough" ? (
-        <>
-          <line x1={topX} y1="15" x2={botX + (topX - botX) * 0.55} y2="50" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" />
-          <line x1={botX + (topX - botX) * 0.35} y1="60" x2={botX} y2="85" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" />
-          <text x={botX + (topX - botX) * 0.45} y="57" fill="#94a3b8" fontSize="6" textAnchor="middle">door</text>
-        </>
-      ) : shape.id === "notched" ? (
-        <>
-          <line x1={topX} y1="15" x2={botX + (topX - botX) * 0.5} y2="52" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" />
-          <polyline
-            points={`${botX + (topX - botX) * 0.5},52 ${botX + (topX - botX) * 0.35 + 5},65 ${botX + (topX - botX) * 0.25},72`}
-            fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-          />
-          <line x1={botX + (topX - botX) * 0.25} y1="72" x2={botX} y2="85" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" />
-        </>
-      ) : (
-        <line x1={topX} y1="15" x2={botX} y2="85" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" />
-      )}
-      {shape.angle !== 0 && (
-        <>
-          <line x1="50" y1="15" x2="50" y2="50" stroke="#475569" strokeWidth="0.6" strokeDasharray="2,2" />
-          <text x="62" y="30" fill="#94a3b8" fontSize="7">{Math.abs(shape.angle)}\u00b0</text>
-        </>
-      )}
-      <text x="50" y="8" fill="#e2e8f0" fontSize="6" textAnchor="middle" fontWeight="600">{shape.name}</text>
-      <text x="8" y={waterY + 4} fill="#3b82f6" fontSize="5">WL</text>
-    </svg>
-  );
-}
-
-function ShapeCard({ shape, selected, onClick }) {
-  return (
-    <button
-      onClick={() => onClick(shape.id)}
-      style={{
-        background: selected ? "#1e293b" : "#0f172a",
-        border: selected ? "2px solid #f59e0b" : "2px solid #1e293b",
-        borderRadius: 12, padding: 12, cursor: "pointer", textAlign: "left", transition: "all 0.2s",
-      }}
-    >
-      <TransomProfile shape={shape} size={100} />
-      <p style={{ color: "#94a3b8", fontSize: 12, marginTop: 8, lineHeight: 1.4 }}>{shape.desc}</p>
-      <div style={{ marginTop: 8 }}>
-        <span style={{ color: "#22c55e", fontSize: 11 }}>{"\u2713"} </span>
-        <span style={{ color: "#94a3b8", fontSize: 11 }}>{shape.pros[0]}</span>
-      </div>
-    </button>
-  );
-}
 
 function NumberInput({ label, value, onChange, unit, min, max, step = 1 }) {
   return (
@@ -490,8 +402,7 @@ function OnboardingOverlay({ step, totalSteps, onNext, onPrev, onSkip, onFinish 
 // ═══════════════════════════════════════════
 
 export default function TransomCalculator() {
-  const [tab, setTab] = useState("shapes");
-  const [selectedShape, setSelectedShape] = useState("raked");
+  const [tab, setTab] = useState("calc");
 
   // ── Onboarding tutorial state ──
   const [showTutorial, setShowTutorial] = useState(true);
@@ -520,7 +431,8 @@ export default function TransomCalculator() {
 
   // Area calculator state
   const [transomWidth, setTransomWidth] = useState(1800);
-  const [transomHeight, setTransomHeight] = useState(508);
+  const [centreHeight, setCentreHeight] = useState(508);
+  const [sideHeight, setSideHeight] = useState(350);
   const [transomAngle, setTransomAngle] = useState(20);
   const [thickness, setThickness] = useState(50);
   const [materialId, setMaterialId] = useState("titanpour");
@@ -537,8 +449,8 @@ export default function TransomCalculator() {
 
   // Rod spacing
   const [rodSpacing, setRodSpacing] = useState(70);
-  const [hRodDiameter, setHRodDiameter] = useState(6);
-  const [vRodDiameter, setVRodDiameter] = useState(6);
+  const [hRodDiameter, setHRodDiameter] = useState(7);
+  const [vRodDiameter, setVRodDiameter] = useState(7);
   const [shellThickness, setShellThickness] = useState(6); // existing outer GRP skin (mm)
   const [minCover, setMinCover] = useState(10); // min resin between rod and mould/shell wall (mm)
   // Keep rodDiameter as derived value for backward compat (use the larger)
@@ -659,121 +571,121 @@ export default function TransomCalculator() {
   }, [selectedLocation, loadForecast]);
 
   // ── Engineering calculations ──
-  // All areas computed on the panel surface (slope plane) for consistency.
-  // Cutout height is converted from face-on (vertical) to slope measurement
-  // since engine cutout specs are given as face-on dimensions.
+  // Pentagon transom: rectangle on top (full width × sideHeight) + triangle V at bottom.
+  // Area = Width × (CentreSlopeH + SideSlopeH) / 2  (trapezoid formula)
+  // H rods: -30mm for clearance, shorter in triangle zone
+  // V rods: each calculated individually based on position across width
   const calcs = useMemo(() => {
     const angleRad = (transomAngle * Math.PI) / 180;
     const cosAngle = Math.cos(angleRad);
+    const ROD_GAP = 30; // mm clearance on H rods
 
-    // Panel slope height: vertical height projected onto the raked surface
-    // h_slope = h_vertical / cos(angle)
-    const slopeHeight = transomHeight / cosAngle;
+    // Slope heights
+    const centreSlopeHeight = centreHeight / cosAngle;
+    const sideSlopeHeight = sideHeight / cosAngle;
 
-    // Gross panel area on the slope surface (mm²)
-    const grossArea_mm2 = transomWidth * slopeHeight;
+    // Pentagon area: trapezoid formula on slope surface
+    // Area = Width × (CentreSlopeH + SideSlopeH) / 2
+    const grossArea_mm2 = transomWidth * (centreSlopeHeight + sideSlopeHeight) / 2;
     const grossArea_m2 = grossArea_mm2 / 1e6;
 
-    // Cutout: specs are face-on (vertical) measurements.
-    // Width is unchanged (perpendicular to rake axis).
-    // Height must be converted to slope: h_cutout_slope = h_cutout_vertical / cos(angle)
-    // Multiple cutouts: total cutout = single cutout area × count
+    // Cutout
     const cutoutSlopeHeight = hasCutout ? cutoutHeight / cosAngle : 0;
     const singleCutoutArea_mm2 = hasCutout ? cutoutWidth * cutoutSlopeHeight : 0;
     const cutoutArea_mm2 = singleCutoutArea_mm2 * cutoutCount;
     const cutoutArea_m2 = cutoutArea_mm2 / 1e6;
 
-    // Net panel area (slope surface minus cutout)
+    // Net area
     const netArea_mm2 = grossArea_mm2 - cutoutArea_mm2;
     const netArea_m2 = netArea_mm2 / 1e6;
 
-    // Volume = surface area × thickness (uniform thickness normal to surface)
+    // Volume: m² × mm = litres
+    const cavityLitres = netArea_m2 * thickness;
     const volume_mm3 = netArea_mm2 * thickness;
-    const volume_m3 = volume_mm3 / 1e9;
 
-    // Weight = volume × material density
-    const weight_kg = volume_m3 * material.density;
-    const weight_g = weight_kg * 1000;
+    // ── Horizontal rods (spaced down the slope from top) ──
+    // H rods based on centre (tallest) slope height
+    const hRodCount = Math.floor(centreSlopeHeight / rodSpacing) + 1;
+    const hRodDetails = [];
+    let totalHRodLength_mm = 0;
+    for (let i = 0; i < hRodCount; i++) {
+      const slopeY = i * rodSpacing;
+      const vertY = slopeY * cosAngle; // convert slope position to vertical
+      let panelWidth;
+      if (vertY <= sideHeight) {
+        panelWidth = transomWidth; // rectangular zone
+      } else {
+        // triangle zone: narrows linearly from full width to 0
+        panelWidth = transomWidth * (centreHeight - vertY) / (centreHeight - sideHeight);
+      }
+      const rodLen = Math.max(panelWidth - ROD_GAP, 0);
+      hRodDetails.push({ slopeY, vertY, panelWidth, length: rodLen, zone: vertY <= sideHeight ? "RECT" : "TRI" });
+      totalHRodLength_mm += rodLen;
+    }
 
-    // GSM = mass per unit surface area (g/m²)
-    // = (thickness_m) × (density_kg/m³) × 1000 g/kg
-    const gsm = (thickness / 1000) * material.density * 1000;
+    // ── Vertical rods (spaced across the width) ──
+    // Height varies: sideHeight at edges, centreHeight at middle
+    const vRodCount = Math.floor(transomWidth / rodSpacing) + 1;
+    const vRodDetails = [];
+    let totalVRodLength_mm = 0;
+    for (let i = 0; i < vRodCount; i++) {
+      const x = i * rodSpacing;
+      const t = 1 - Math.abs(2 * x / transomWidth - 1); // 0 at edges, 1 at centre
+      const h = sideHeight + (centreHeight - sideHeight) * t;
+      const slopeLen = h / cosAngle;
+      vRodDetails.push({ x, t, height: h, length: slopeLen });
+      totalVRodLength_mm += slopeLen;
+    }
 
-    // Rod grid: spacing measured along the panel surface
-    const hRods = Math.floor(slopeHeight / rodSpacing) + 1;
-    const vRods = Math.floor(transomWidth / rodSpacing) + 1;
-    const hRodLength = transomWidth;  // each H rod spans full width
-    const vRodLength = slopeHeight;   // each V rod runs full slope height
-    const totalHRodLength = hRods * hRodLength;
-    const totalVRodLength = vRods * vRodLength;
-    const totalRodLength = totalHRodLength + totalVRodLength;
+    const totalRodLength_mm = totalHRodLength_mm + totalVRodLength_mm;
 
-    // Rod displacement: H and V rods may have different diameters
-    const hRodRadius = hRodDiameter / 2;
-    const vRodRadius = vRodDiameter / 2;
-    const hRodCrossSection = Math.PI * hRodRadius * hRodRadius;
-    const vRodCrossSection = Math.PI * vRodRadius * vRodRadius;
-    const hRodVolume_mm3 = hRodCrossSection * totalHRodLength;
-    const vRodVolume_mm3 = vRodCrossSection * totalVRodLength;
+    // Rod displacement
+    const hRodCrossSection = Math.PI * (hRodDiameter / 2) * (hRodDiameter / 2);
+    const vRodCrossSection = Math.PI * (vRodDiameter / 2) * (vRodDiameter / 2);
+    const hRodVolume_mm3 = hRodCrossSection * totalHRodLength_mm;
+    const vRodVolume_mm3 = vRodCrossSection * totalVRodLength_mm;
     const totalRodVolume_mm3 = hRodVolume_mm3 + vRodVolume_mm3;
     const totalRodVolume_litres = totalRodVolume_mm3 / 1e6;
 
-    // Pour depth = total thickness minus the existing outer shell
+    // Pour depth
     const pourDepth = thickness - shellThickness;
 
-    // Cover analysis: minimum resin between rod surface and shell/mould wall
-    // Available depth for rods = pourDepth (shell is already there, rods sit inside the pour)
-    // Single rod cover = (pourDepth - diameter) / 2
+    // Cover analysis
     const hCover = (pourDepth - hRodDiameter) / 2;
     const vCover = (pourDepth - vRodDiameter) / 2;
-
-    // At rod crossings, H and V rods stack: total rod height = hDia + vDia
-    // Cover at crossing = (pourDepth - hDia - vDia) / 2
     const stackedHeight = hRodDiameter + vRodDiameter;
     const stackCover = (pourDepth - stackedHeight) / 2;
     const stackFits = stackCover >= minCover;
     const hFits = hCover >= minCover;
     const vFits = vCover >= minCover;
-
-    // Min total thickness needed (including shell)
     const minThicknessForStack = stackedHeight + minCover * 2 + shellThickness;
 
-    // Cavity volume (before rod displacement)
-    const cavityLitres = volume_mm3 / 1e6;
-
-    // Actual resin/mix pour volume = cavity minus rod displacement
+    // Resin volumes
     const resinLitres = (volume_mm3 - totalRodVolume_mm3) / 1e6;
     const resinWithWastage = resinLitres * (1 + wastagePercent / 100);
-
-    // Net pour volume after rod displacement (kept for mix calculator)
     const pourVolume_mm3 = volume_mm3 - totalRodVolume_mm3;
     const pourVolume_litres = pourVolume_mm3 / 1e6;
 
     return {
-      slopeHeight: slopeHeight.toFixed(1),
+      centreSlopeHeight: centreSlopeHeight.toFixed(1),
+      sideSlopeHeight: sideSlopeHeight.toFixed(1),
       cutoutSlopeHeight: cutoutSlopeHeight.toFixed(1),
       grossArea_m2: grossArea_m2.toFixed(4),
       cutoutArea_m2: cutoutArea_m2.toFixed(4),
       cutoutCount,
       netArea_m2: netArea_m2.toFixed(4),
-      volume_m3: (volume_m3 * 1000).toFixed(2),
       cavityLitres: cavityLitres.toFixed(2),
       resinLitres: resinLitres.toFixed(2),
       resinWithWastage: resinWithWastage.toFixed(2),
-      weight_g: weight_g.toFixed(0),
-      weight_kg: weight_kg.toFixed(2),
-      gsm: gsm.toFixed(0),
-      hRods, vRods,
-      hRodLength: hRodLength.toFixed(0),
-      vRodLength: vRodLength.toFixed(0),
-      totalHRodLength: (totalHRodLength / 1000).toFixed(2),
-      totalVRodLength: (totalVRodLength / 1000).toFixed(2),
-      totalRodLength: (totalRodLength / 1000).toFixed(2),
-      totalRodCount: hRods + vRods,
+      hRods: hRodCount, vRods: vRodCount,
+      hRodDetails, vRodDetails,
+      totalHRodLength: (totalHRodLength_mm / 1000).toFixed(2),
+      totalVRodLength: (totalVRodLength_mm / 1000).toFixed(2),
+      totalRodLength: (totalRodLength_mm / 1000).toFixed(2),
+      totalRodCount: hRodCount + vRodCount,
       rodDisplacement_litres: totalRodVolume_litres.toFixed(2),
       pourVolume_litres: pourVolume_litres.toFixed(2),
       pourVolume_mm3,
-      // Cover analysis
       pourDepth,
       hCover: hCover.toFixed(1),
       vCover: vCover.toFixed(1),
@@ -781,7 +693,7 @@ export default function TransomCalculator() {
       stackFits, hFits, vFits,
       minThicknessForStack,
     };
-  }, [transomWidth, transomHeight, transomAngle, thickness, shellThickness, materialId, cutoutWidth, cutoutHeight, cutoutCount, hasCutout, rodSpacing, hRodDiameter, vRodDiameter, minCover, wastagePercent, material]);
+  }, [transomWidth, centreHeight, sideHeight, transomAngle, thickness, shellThickness, cutoutWidth, cutoutHeight, cutoutCount, hasCutout, rodSpacing, hRodDiameter, vRodDiameter, minCover, wastagePercent]);
 
   // ── Mix calculator ──
   // Uses live weather temp if available, otherwise defaults to 20°C
@@ -823,7 +735,7 @@ export default function TransomCalculator() {
 
     // Rod displacement (from main calcs)
     const rodDisp = parseFloat(calcs.rodDisplacement_litres);
-    const cavityVolume = parseFloat(calcs.volume_m3); // this is in litres (see naming note)
+    const cavityVolume = parseFloat(calcs.cavityLitres);
     const pourNeeded = parseFloat(calcs.pourVolume_litres);
 
     // Pour weight = pour volume (litres) × mixed density
@@ -966,8 +878,7 @@ export default function TransomCalculator() {
   }, []);
 
   const tabs = [
-    { id: "shapes", label: "Transom Shapes" },
-    { id: "calc", label: "Area & Weight" },
+    { id: "calc", label: "Area & Volume" },
     { id: "rods", label: "Rod Spacing" },
     { id: "mix", label: "Mix Calculator" },
     { id: "temp", label: "Live Weather" },
@@ -1004,7 +915,7 @@ export default function TransomCalculator() {
               TitanPour &mdash; Transom Engineering Calculator
             </h1>
             <p style={{ color: "#64748b", fontSize: 13, margin: "4px 0 0" }}>
-              Pourable composite transom system &middot; Shape reference &middot; Area &amp; weight &middot; Rod spacing &middot; Live weather &middot; Job summary
+              Pourable composite transom system &middot; Area &amp; volume &middot; Rod spacing &middot; Mix calculator &middot; Live weather &middot; Job summary
             </p>
           </div>
           <button
@@ -1043,71 +954,15 @@ export default function TransomCalculator() {
           ))}
         </div>
 
-        {/* ===== SHAPES TAB ===== */}
-        {tab === "shapes" && (
-          <div>
-            <div style={{
-              display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-              gap: 12, marginBottom: 20,
-            }}>
-              {TRANSOM_SHAPES.map((s) => (
-                <ShapeCard key={s.id} shape={s} selected={selectedShape === s.id} onClick={setSelectedShape} />
-              ))}
-            </div>
-            {(() => {
-              const s = TRANSOM_SHAPES.find((x) => x.id === selectedShape);
-              return (
-                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b" }}>
-                  <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
-                    <TransomProfile shape={s} size={150} />
-                    <div style={{ flex: 1, minWidth: 200 }}>
-                      <h2 style={{ fontSize: 18, color: "#f59e0b", margin: "0 0 4px" }}>{s.name}</h2>
-                      <p style={{ color: "#94a3b8", fontSize: 13, margin: "0 0 12px", lineHeight: 1.5 }}>{s.desc}</p>
-                      <div style={{ fontSize: 13 }}>
-                        <span style={{ color: "#64748b" }}>Typical angle: </span>
-                        <span style={{ color: "#e2e8f0", fontWeight: 600 }}>
-                          {s.angle === 0 ? "0\u00b0 (vertical)" : `${Math.abs(s.angle)}\u00b0 ${s.angle > 0 ? "raked aft" : "reversed forward"}`}
-                        </span>
-                      </div>
-                      <div style={{ display: "flex", gap: 24, marginTop: 12 }}>
-                        <div>
-                          <div style={{ color: "#22c55e", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>ADVANTAGES</div>
-                          {s.pros.map((p, i) => (
-                            <div key={i} style={{ color: "#94a3b8", fontSize: 12, padding: "2px 0" }}>{"\u2713"} {p}</div>
-                          ))}
-                        </div>
-                        <div>
-                          <div style={{ color: "#ef4444", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>TRADE-OFFS</div>
-                          {s.cons.map((c, i) => (
-                            <div key={i} style={{ color: "#94a3b8", fontSize: 12, padding: "2px 0" }}>{"\u2717"} {c}</div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ marginTop: 16, padding: "12px 16px", background: "#1e293b", borderRadius: 8 }}>
-                    <div style={{ color: "#64748b", fontSize: 11, marginBottom: 4 }}>INDUSTRY ANGLE REFERENCE</div>
-                    <div style={{ color: "#94a3b8", fontSize: 12, lineHeight: 1.6 }}>
-                      Average powerboat transom rake: <strong style={{ color: "#f59e0b" }}>12\u201316\u00b0</strong> (industry avg ~14\u00b0) &middot;
-                      Sterndrive spec (MerCruiser): <strong style={{ color: "#e2e8f0" }}>13\u201316\u00b0</strong> &middot;
-                      Max safe outboard rake: <strong style={{ color: "#e2e8f0" }}>~17\u00b0</strong> &middot;
-                      Your design target: <strong style={{ color: "#22c55e" }}>20\u00b0</strong> (steep \u2014 verify motor tilt clearance)
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        )}
-
-        {/* ===== AREA & WEIGHT TAB ===== */}
+        {/* ===== AREA & VOLUME TAB ===== */}
         {tab === "calc" && (
           <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
             <div style={{ flex: 1, minWidth: 280 }}>
               <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b" }}>
                 <h3 style={{ color: "#f59e0b", fontSize: 14, margin: "0 0 16px", fontWeight: 700 }}>TRANSOM DIMENSIONS</h3>
                 <NumberInput label="Width (beam at transom)" value={transomWidth} onChange={setTransomWidth} unit="mm" min={500} max={5000} />
-                <NumberInput label="Height (vertical)" value={transomHeight} onChange={setTransomHeight} unit="mm" min={200} max={1500} />
+                <NumberInput label="Centre height (deepest)" value={centreHeight} onChange={setCentreHeight} unit="mm" min={200} max={1500} />
+                <NumberInput label="Side height (edges)" value={sideHeight} onChange={setSideHeight} unit="mm" min={50} max={1500} />
                 <NumberInput label="Rake / Slope angle" value={transomAngle} onChange={setTransomAngle} unit="\u00b0" min={0} max={35} />
                 <NumberInput label="Total thickness" value={thickness} onChange={setThickness} unit="mm" min={5} max={150} step={0.5} />
                 <NumberInput label="Outer shell (existing skin)" value={shellThickness} onChange={setShellThickness} unit="mm" min={0} max={20} />
@@ -1190,52 +1045,56 @@ export default function TransomCalculator() {
               <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b" }}>
                 <h3 style={{ color: "#22c55e", fontSize: 14, margin: "0 0 16px", fontWeight: 700 }}>RESULTS</h3>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  <ResultBox label="Slope Height (on angle)" value={calcs.slopeHeight} unit="mm" />
-                  <ResultBox label="Gross Area" value={calcs.grossArea_m2} unit="m\u00b2" />
+                  <ResultBox label="Centre slope height" value={calcs.centreSlopeHeight} unit="mm" />
+                  <ResultBox label="Side slope height" value={calcs.sideSlopeHeight} unit="mm" />
+                  <ResultBox label="Gross Area (pentagon)" value={calcs.grossArea_m2} unit="m\u00b2" />
                   {hasCutout && <ResultBox label={`Cutout Area (${cutoutCount}x)`} value={calcs.cutoutArea_m2} unit="m\u00b2" />}
                   <ResultBox label="Net Area" value={calcs.netArea_m2} unit="m\u00b2" highlight />
+                  <ResultBox label="Cavity volume" value={calcs.cavityLitres} unit="litres" />
                   <ResultBox label="Pour volume (minus rods)" value={calcs.resinLitres} unit="litres" />
                   <ResultBox label={`Pour +${wastagePercent}% waste`} value={calcs.resinWithWastage} unit="litres" highlight />
-                  <ResultBox label="Total Weight" value={calcs.weight_kg} unit="kg" highlight />
-                  <ResultBox label="GSM (surface weight)" value={calcs.gsm} unit="g/m\u00b2" />
                 </div>
               </div>
 
               <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginTop: 12 }}>
-                <h3 style={{ color: "#64748b", fontSize: 12, margin: "0 0 12px" }}>CROSS-SECTION SCHEMATIC</h3>
+                <h3 style={{ color: "#64748b", fontSize: 12, margin: "0 0 12px" }}>TRANSOM FACE-ON (PENTAGON SHAPE)</h3>
                 <svg viewBox="0 0 300 200" style={{ width: "100%", maxHeight: 200, background: "#020617", borderRadius: 8 }}>
                   {(() => {
-                    const aRad = (transomAngle * Math.PI) / 180;
-                    const dx = Math.sin(aRad) * 140;
-                    const topL = 150 - dx / 2 - thickness / 6;
-                    const topR = topL + thickness / 3;
-                    const botL = 150 + dx / 2 - thickness / 6;
-                    const botR = botL + thickness / 3;
+                    // Pentagon: rectangle top + V bottom
+                    const maxH = Math.max(centreHeight, 1);
+                    const scale = 150 / maxH;
+                    const w = Math.min(transomWidth * scale, 260);
+                    const sH = sideHeight * scale;
+                    const cH = centreHeight * scale;
+                    const x0 = 150 - w / 2;
+                    const x1 = 150 + w / 2;
+                    const y0 = 15;
                     return (
                       <>
                         <polygon
-                          points={`${topL},20 ${topR},20 ${botR},170 ${botL},170`}
-                          fill="#b45309" opacity="0.6" stroke="#f59e0b" strokeWidth="1.5"
+                          points={`${x0},${y0} ${x1},${y0} ${x1},${y0 + sH} ${150},${y0 + cH} ${x0},${y0 + sH}`}
+                          fill="#b45309" opacity="0.4" stroke="#f59e0b" strokeWidth="1.5"
                         />
+                        {/* Side height label */}
+                        <line x1={x0 - 8} y1={y0} x2={x0 - 8} y2={y0 + sH} stroke="#3b82f6" strokeWidth="0.8" />
+                        <text x={x0 - 12} y={y0 + sH / 2} fill="#3b82f6" fontSize="8" textAnchor="end">{sideHeight}mm</text>
+                        {/* Centre height label */}
+                        <line x1={150} y1={y0} x2={150} y2={y0 + cH} stroke="#22c55e" strokeWidth="0.8" strokeDasharray="3,2" />
+                        <text x={156} y={y0 + cH / 2} fill="#22c55e" fontSize="8" textAnchor="start">{centreHeight}mm</text>
+                        {/* Width label */}
+                        <text x="150" y={y0 + cH + 18} fill="#64748b" fontSize="8" textAnchor="middle">{transomWidth}mm wide</text>
                         {hasCutout && (
-                          <rect
-                            x={(topL + botL) / 2 - 15} y={60} width={30} height={50}
-                            fill="#020617" stroke="#ef4444" strokeWidth="1" strokeDasharray="3,2"
-                          />
-                        )}
-                        <line x1="40" y1="20" x2="40" y2="170" stroke="#3b82f6" strokeWidth="0.8" />
-                        <line x1="36" y1="20" x2="44" y2="20" stroke="#3b82f6" strokeWidth="0.8" />
-                        <line x1="36" y1="170" x2="44" y2="170" stroke="#3b82f6" strokeWidth="0.8" />
-                        <text x="28" y="100" fill="#3b82f6" fontSize="9" textAnchor="middle" transform="rotate(-90, 28, 100)">{transomHeight}mm</text>
-                        <text x={(topL + topR) / 2} y="14" fill="#f59e0b" fontSize="8" textAnchor="middle">{transomAngle}\u00b0</text>
-                        <text x={(topR + botR) / 2 + 20} y="100" fill="#94a3b8" fontSize="8" textAnchor="start">{thickness}mm</text>
-                        {hasCutout && (
-                          <text x={(topL + botL) / 2} y={118} fill="#ef4444" fontSize="7" textAnchor="middle">cutout</text>
+                          <>
+                            <rect
+                              x={150 - (cutoutWidth * scale) / 2} y={y0} width={cutoutWidth * scale} height={Math.min(cutoutHeight * scale, sH)}
+                              fill="#020617" stroke="#ef4444" strokeWidth="1" strokeDasharray="3,2"
+                            />
+                            <text x="150" y={y0 + Math.min(cutoutHeight * scale, sH) + 10} fill="#ef4444" fontSize="7" textAnchor="middle">cutout</text>
+                          </>
                         )}
                       </>
                     );
                   })()}
-                  <text x="150" y="190" fill="#64748b" fontSize="8" textAnchor="middle">{transomWidth}mm wide (into page)</text>
                 </svg>
               </div>
             </div>
@@ -1255,7 +1114,8 @@ export default function TransomCalculator() {
                   <NumberInput label="Outer shell thickness" value={shellThickness} onChange={setShellThickness} unit="mm" min={0} max={20} />
                   <NumberInput label="Min resin cover" value={minCover} onChange={setMinCover} unit="mm" min={3} max={30} />
                   <NumberInput label="Transom width" value={transomWidth} onChange={setTransomWidth} unit="mm" />
-                  <NumberInput label="Transom height (vertical)" value={transomHeight} onChange={setTransomHeight} unit="mm" />
+                  <NumberInput label="Centre height" value={centreHeight} onChange={setCentreHeight} unit="mm" />
+                  <NumberInput label="Side height" value={sideHeight} onChange={setSideHeight} unit="mm" />
                   <NumberInput label="Rake angle" value={transomAngle} onChange={setTransomAngle} unit={"\u00b0"} min={0} max={35} />
                 </div>
 
@@ -1372,12 +1232,10 @@ export default function TransomCalculator() {
               <div style={{ flex: 1, minWidth: 280 }}>
                 {/* Grid results */}
                 <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 12 }}>
-                  <div style={{ color: "#64748b", fontSize: 11, marginBottom: 8 }}>AT {rodSpacing}mm SPACING &mdash; H &oslash;{hRodDiameter}mm / V &oslash;{vRodDiameter}mm</div>
+                  <div style={{ color: "#64748b", fontSize: 11, marginBottom: 8 }}>AT {rodSpacing}mm SPACING &mdash; H &oslash;{hRodDiameter}mm / V &oslash;{vRodDiameter}mm &mdash; H rods 30mm shorter for clearance</div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                     <ResultBox label="Horizontal rods" value={calcs.hRods} unit="rods" />
                     <ResultBox label="Vertical rods" value={calcs.vRods} unit="rods" />
-                    <ResultBox label="H rod length (each)" value={calcs.hRodLength} unit="mm" />
-                    <ResultBox label="V rod length (on slope)" value={calcs.vRodLength} unit="mm" highlight />
                     <ResultBox label="Total H rod length" value={calcs.totalHRodLength} unit="m" />
                     <ResultBox label="Total V rod length" value={calcs.totalVRodLength} unit="m" />
                   </div>
@@ -1386,6 +1244,33 @@ export default function TransomCalculator() {
                   </div>
                   <div style={{ marginTop: 8 }}>
                     <ResultBox label="Total rod count" value={calcs.totalRodCount} unit={`(${calcs.hRods}H + ${calcs.vRods}V)`} />
+                  </div>
+
+                  {/* Individual rod cut list */}
+                  <div style={{ marginTop: 12 }}>
+                    <div style={{ color: "#f59e0b", fontSize: 11, fontWeight: 700, marginBottom: 6 }}>H ROD CUT LIST</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                      {calcs.hRodDetails.map((r, i) => (
+                        <span key={i} style={{
+                          background: r.zone === "RECT" ? "#1e293b" : "#f59e0b15",
+                          border: "1px solid #334155", borderRadius: 4,
+                          padding: "2px 6px", fontSize: 11, color: "#e2e8f0",
+                        }}>
+                          {r.length.toFixed(0)}mm
+                        </span>
+                      ))}
+                    </div>
+                    <div style={{ color: "#f59e0b", fontSize: 11, fontWeight: 700, marginBottom: 6, marginTop: 10 }}>V ROD CUT LIST</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                      {calcs.vRodDetails.map((r, i) => (
+                        <span key={i} style={{
+                          background: "#1e293b", border: "1px solid #334155", borderRadius: 4,
+                          padding: "2px 6px", fontSize: 11, color: "#e2e8f0",
+                        }}>
+                          {r.length.toFixed(0)}mm
+                        </span>
+                      ))}
+                    </div>
                   </div>
                   {hRodDiameter !== vRodDiameter && (
                     <div style={{ marginTop: 10, padding: "8px 12px", background: "#f59e0b10", border: "1px solid #f59e0b30", borderRadius: 6, fontSize: 11, color: "#f59e0b" }}>
@@ -1398,29 +1283,51 @@ export default function TransomCalculator() {
                 <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b" }}>
                   <h3 style={{ color: "#64748b", fontSize: 12, margin: "0 0 12px" }}>ROD GRID PREVIEW (face-on)</h3>
                   <svg viewBox="0 0 300 220" style={{ width: "100%", background: "#020617", borderRadius: 8 }}>
-                    <rect x="30" y="20" width="240" height="170" fill="none" stroke="#334155" strokeWidth="1.5" rx="2" />
-                    {Array.from({ length: Math.min(calcs.hRods, 30) }).map((_, i) => {
-                      const y = 20 + (i * 170) / Math.max(calcs.hRods - 1, 1);
-                      return <line key={`h${i}`} x1="30" y1={y} x2="270" y2={y} stroke="#f59e0b" strokeWidth="0.8" opacity="0.5" />;
-                    })}
-                    {Array.from({ length: Math.min(calcs.vRods, 40) }).map((_, i) => {
-                      const x = 30 + (i * 240) / Math.max(calcs.vRods - 1, 1);
-                      return <line key={`v${i}`} x1={x} y1="20" x2={x} y2="190" stroke="#3b82f6" strokeWidth="0.8" opacity="0.5" />;
-                    })}
-                    {hasCutout && (() => {
-                      const cw = (cutoutWidth / transomWidth) * 240;
-                      const ch = (cutoutHeight / transomHeight) * 170;
-                      const cx = 30 + (240 - cw) / 2;
-                      return <rect x={cx} y={20} width={cw} height={ch} fill="#020617" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="4,3" />;
+                    {(() => {
+                      // Pentagon outline scaled to fit
+                      const maxH = Math.max(parseFloat(calcs.centreSlopeHeight), 1);
+                      const sH = parseFloat(calcs.sideSlopeHeight);
+                      const scale = 170 / maxH;
+                      const w = Math.min(transomWidth * scale, 240);
+                      const svgSH = sH * scale;
+                      const svgCH = maxH * scale;
+                      const x0 = 150 - w / 2;
+                      const x1 = 150 + w / 2;
+                      const y0 = 20;
+                      return (
+                        <>
+                          <polygon
+                            points={`${x0},${y0} ${x1},${y0} ${x1},${y0 + svgSH} ${150},${y0 + svgCH} ${x0},${y0 + svgSH}`}
+                            fill="none" stroke="#334155" strokeWidth="1.5"
+                          />
+                          {/* H rods */}
+                          {calcs.hRodDetails.slice(0, 30).map((r, i) => {
+                            const y = y0 + (r.slopeY / maxH) * svgCH;
+                            const rw = (r.length / transomWidth) * w;
+                            const rx = 150 - rw / 2;
+                            return <line key={`h${i}`} x1={rx} y1={y} x2={rx + rw} y2={y} stroke="#f59e0b" strokeWidth="0.8" opacity="0.5" />;
+                          })}
+                          {/* V rods */}
+                          {calcs.vRodDetails.slice(0, 40).map((r, i) => {
+                            const x = x0 + (r.x / transomWidth) * w;
+                            const rodH = (r.length / maxH) * svgCH;
+                            return <line key={`v${i}`} x1={x} y1={y0} x2={x} y2={y0 + rodH} stroke="#3b82f6" strokeWidth="0.8" opacity="0.5" />;
+                          })}
+                          {hasCutout && (() => {
+                            const cw = (cutoutWidth / transomWidth) * w;
+                            const ch = Math.min((cutoutHeight / maxH) * svgCH, svgSH);
+                            return <rect x={150 - cw / 2} y={y0} width={cw} height={ch} fill="#020617" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="4,3" />;
+                          })()}
+                        </>
+                      );
                     })()}
                     <text x="150" y="210" fill="#64748b" fontSize="9" textAnchor="middle">{transomWidth}mm</text>
-                    <text x="18" y="105" fill="#64748b" fontSize="9" textAnchor="middle" transform="rotate(-90, 18, 105)">{calcs.slopeHeight}mm (slope)</text>
                     <text x="280" y="105" fill="#f59e0b" fontSize="8" textAnchor="start">H: {calcs.hRods}</text>
                     <text x="150" y="14" fill="#3b82f6" fontSize="8" textAnchor="middle">V: {calcs.vRods}</text>
                   </svg>
                   <div style={{ marginTop: 12, padding: 10, background: "#1e293b", borderRadius: 8, fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>
-                    <strong style={{ color: "#f59e0b" }}>Key measurement:</strong> Each vertical rod runs along the slope, not the vertical height.
-                    At {transomAngle}&deg; rake, the slope length is <strong style={{ color: "#22c55e" }}>{calcs.vRodLength}mm</strong> vs {transomHeight}mm vertical.
+                    <strong style={{ color: "#f59e0b" }}>Pentagon shape:</strong> {transomWidth}mm wide, {centreHeight}mm centre, {sideHeight}mm sides.
+                    H rods are 30mm shorter than panel width for clearance. V rods vary in length (shorter at edges, longest at centre).
                     <br/><br/>
                     <strong style={{ color: "#f59e0b" }}>H &oslash;{hRodDiameter}mm</strong> / <strong style={{ color: "#3b82f6" }}>V &oslash;{vRodDiameter}mm</strong> at {rodSpacing}mm centres — {calcs.totalRodCount} rods total requiring <strong style={{ color: "#22c55e" }}>{calcs.totalRodLength}m</strong> of rod.
                   </div>
@@ -1463,7 +1370,7 @@ export default function TransomCalculator() {
                 <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
                   <h3 style={{ color: "#3b82f6", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>POUR VOLUME (ROD DISPLACEMENT)</h3>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                    <ResultBox label="Cavity volume" value={calcs.volume_m3} unit="litres" />
+                    <ResultBox label="Cavity volume" value={calcs.cavityLitres} unit="litres" />
                     <ResultBox label="Rod displacement" value={calcs.rodDisplacement_litres} unit="litres" />
                     <ResultBox label="Actual pour needed" value={calcs.pourVolume_litres} unit="litres" highlight />
                   </div>
@@ -2028,9 +1935,10 @@ export default function TransomCalculator() {
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 8 }}>
                   <ResultBox label="Width (beam)" value={transomWidth} unit="mm" />
-                  <ResultBox label="Height (vertical)" value={transomHeight} unit="mm" />
+                  <ResultBox label="Centre height" value={centreHeight} unit="mm" />
+                  <ResultBox label="Side height" value={sideHeight} unit="mm" />
                   <ResultBox label="Rake angle" value={transomAngle} unit={"\u00b0"} />
-                  <ResultBox label="Slope height" value={calcs.slopeHeight} unit="mm" highlight />
+                  <ResultBox label="Centre slope" value={calcs.centreSlopeHeight} unit="mm" highlight />
                   <ResultBox label="Thickness" value={thickness} unit="mm" />
                   <ResultBox label="Material" value={material.name.split("(")[0].trim()} unit="" />
                 </div>
@@ -2055,10 +1963,9 @@ export default function TransomCalculator() {
                   Areas &amp; Volumes
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 8 }}>
-                  <ResultBox label="Gross panel area" value={calcs.grossArea_m2} unit="m\u00b2" />
+                  <ResultBox label="Gross area (pentagon)" value={calcs.grossArea_m2} unit="m\u00b2" />
                   <ResultBox label="Net panel area" value={calcs.netArea_m2} unit="m\u00b2" highlight />
-                  <ResultBox label="Panel volume" value={calcs.volume_m3} unit="litres" />
-                  <ResultBox label="Finished weight" value={calcs.weight_kg} unit="kg" highlight />
+                  <ResultBox label="Cavity volume" value={calcs.cavityLitres} unit="litres" />
                 </div>
               </div>
 
@@ -2083,8 +1990,8 @@ export default function TransomCalculator() {
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 8 }}>
                   <ResultBox label="Rod diameter (H / V)" value={`${hRodDiameter} / ${vRodDiameter}`} unit="mm" />
                   <ResultBox label="Grid spacing" value={rodSpacing} unit="mm" />
-                  <ResultBox label="Horizontal rods" value={calcs.hRods} unit={`@ ${calcs.hRodLength}mm`} />
-                  <ResultBox label="Vertical rods" value={calcs.vRods} unit={`@ ${calcs.vRodLength}mm`} />
+                  <ResultBox label="Horizontal rods" value={calcs.hRods} unit="rods (vary by zone)" />
+                  <ResultBox label="Vertical rods" value={calcs.vRods} unit="rods (vary by position)" />
                   <ResultBox label="Total rod count" value={calcs.totalRodCount} unit="rods" />
                   <ResultBox label="TOTAL ROD LENGTH" value={calcs.totalRodLength} unit="metres" highlight />
                 </div>
@@ -2124,15 +2031,14 @@ export default function TransomCalculator() {
               <h3 style={{ color: "#64748b", fontSize: 12, margin: "0 0 12px", fontWeight: 700 }}>CALCULATION FORMULAS USED</h3>
               <div style={{ color: "#94a3b8", fontSize: 11, lineHeight: 1.8, fontFamily: "monospace" }}>
                 <div>Slope Height = Vertical Height / cos(Rake Angle)</div>
-                <div>Gross Area = Width &times; Slope Height</div>
+                <div>Gross Area = Width &times; (Centre Slope H + Side Slope H) / 2</div>
                 <div>Cutout Area = Cutout Width &times; (Cutout Height / cos(Rake Angle)) &times; Count</div>
                 <div>Net Area = Gross Area &minus; Cutout Area</div>
                 <div>Volume = Net Area &times; Thickness</div>
-                <div>Weight = Volume &times; Material Density</div>
                 <div>Resin Order = Volume &times; (1 + Wastage%)</div>
-                <div>H Rods = floor(Slope Height / Spacing) + 1</div>
-                <div>V Rods = floor(Width / Spacing) + 1</div>
-                <div>Total Rod Length = (H Rods &times; Width) + (V Rods &times; Slope Height)</div>
+                <div>H Rod Length = Width &minus; 30mm (rect zone), tapered in triangle zone</div>
+                <div>V Rod Height at x = Side H + (Centre H &minus; Side H) &times; (1 &minus; |2x/W &minus; 1|)</div>
+                <div>V Rod Slope Length = Height at x / cos(Rake Angle)</div>
               </div>
             </div>
           </div>
@@ -2148,7 +2054,7 @@ export default function TransomCalculator() {
           This calculator provides estimates for planning and material ordering only. All calculations
           must be independently verified by a qualified marine engineer or naval architect before use
           in construction. Boat structural components are safety-critical — errors can result in
-          catastrophic failure, sinking, and loss of life. The formulas assume uniform rectangular
+          catastrophic failure, sinking, and loss of life. The formulas assume a pentagon (trapezoid) transom
           geometry and do not account for compound curves, local reinforcement, hardware loads, or
           dynamic sea loads. Always consult ISO 12215 (small craft hull construction) or equivalent
           classification society standards for your vessel's scantling requirements. Weather data is
