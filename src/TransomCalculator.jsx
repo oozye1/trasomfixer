@@ -2,6 +2,31 @@ import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import transomDiagram from "./assets/image.jpg";
 
 // ═══════════════════════════════════════════
+// THEMES
+// ═══════════════════════════════════════════
+
+const THEMES = {
+  dark: {
+    bg: "#020617", card: "#0f172a", cardAlt: "#1a2744", input: "#1e293b",
+    border: "#1e293b", borderSubtle: "#334155", borderInput: "#334155",
+    text: "#e2e8f0", textSecondary: "#94a3b8", textTertiary: "#64748b",
+    svgBg: "#020617", svgStroke: "#475569",
+    danger: "#1e0000", dangerBorder: "#ef444460", dangerText: "#fca5a5",
+    tabBg: "#1e293b", tabActiveBg: "#f59e0b20", tabActiveText: "#f59e0b", tabText: "#94a3b8",
+    headerBg: "#0f172a",
+  },
+  light: {
+    bg: "#f1f5f9", card: "#ffffff", cardAlt: "#e8f0fe", input: "#f1f5f9",
+    border: "#cbd5e1", borderSubtle: "#e2e8f0", borderInput: "#cbd5e1",
+    text: "#0f172a", textSecondary: "#475569", textTertiary: "#64748b",
+    svgBg: "#f8fafc", svgStroke: "#94a3b8",
+    danger: "#fef2f2", dangerBorder: "#ef444440", dangerText: "#991b1b",
+    tabBg: "#e2e8f0", tabActiveBg: "#f59e0b20", tabActiveText: "#b45309", tabText: "#475569",
+    headerBg: "#ffffff",
+  },
+};
+
+// ═══════════════════════════════════════════
 // CONSTANTS
 // ═══════════════════════════════════════════
 
@@ -212,20 +237,23 @@ function getDayVerdict(high, low, weatherCode) {
 // SUB-COMPONENTS
 // ═══════════════════════════════════════════
 
+// Module-level theme accessor — set by main component on each render
+let t = (key) => THEMES.dark[key];
+
 function NumberInput({ label, value, onChange, unit, min, max, step = 1, labelColor }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-      <label style={{ color: labelColor || "#94a3b8", fontSize: 13, minWidth: 160, fontWeight: labelColor ? 700 : 400 }}>{label}</label>
+      <label style={{ color: labelColor || t("textSecondary"), fontSize: 13, minWidth: 160, fontWeight: labelColor ? 700 : 400 }}>{label}</label>
       <input
         type="number" value={value}
         onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
         min={min} max={max} step={step}
         style={{
-          background: "#1e293b", border: "1px solid #334155", borderRadius: 6,
-          color: "#e2e8f0", padding: "6px 10px", width: 90, fontSize: 14,
+          background: t("input"), border: `1px solid ${t("borderSubtle")}`, borderRadius: 6,
+          color: t("text"), padding: "6px 10px", width: 90, fontSize: 14,
         }}
       />
-      <span style={{ color: "#64748b", fontSize: 12 }}>{unit}</span>
+      <span style={{ color: t("textTertiary"), fontSize: 12 }}>{unit}</span>
     </div>
   );
 }
@@ -233,13 +261,13 @@ function NumberInput({ label, value, onChange, unit, min, max, step = 1, labelCo
 function ResultBox({ label, value, unit, highlight }) {
   return (
     <div style={{
-      background: highlight ? "#1a2744" : "#0f172a",
-      border: highlight ? "1px solid #3b82f6" : "1px solid #1e293b",
+      background: highlight ? t("cardAlt") : t("card"),
+      border: highlight ? "1px solid #3b82f6" : `1px solid ${t("border")}`,
       borderRadius: 8, padding: "10px 14px", minWidth: 140,
     }}>
-      <div style={{ color: "#64748b", fontSize: 11, marginBottom: 2 }}>{label}</div>
-      <div style={{ color: highlight ? "#60a5fa" : "#e2e8f0", fontSize: 18, fontWeight: 700 }}>
-        {value} <span style={{ fontSize: 12, fontWeight: 400, color: "#94a3b8" }}>{unit}</span>
+      <div style={{ color: t("textTertiary"), fontSize: 11, marginBottom: 2 }}>{label}</div>
+      <div style={{ color: highlight ? "#60a5fa" : t("text"), fontSize: 18, fontWeight: 700 }}>
+        {value} <span style={{ fontSize: 12, fontWeight: 400, color: t("textSecondary") }}>{unit}</span>
       </div>
     </div>
   );
@@ -295,14 +323,14 @@ function OnboardingOverlay({ step, totalSteps, onNext, onPrev, onSkip, onFinish 
         @keyframes tutorialSlide { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
       <div style={{
-        background: "#0f172a", border: `1px solid ${data.accent}40`,
+        background: t("card"), border: `1px solid ${data.accent}40`,
         borderRadius: 16, maxWidth: 520, width: "100%",
         boxShadow: `0 0 60px ${data.accent}15, 0 25px 50px rgba(0,0,0,0.5)`,
         animation: "tutorialSlide 0.35s ease-out",
         overflow: "hidden",
       }}>
         {/* Progress bar */}
-        <div style={{ height: 3, background: "#1e293b" }}>
+        <div style={{ height: 3, background: t("input") }}>
           <div style={{
             height: "100%", background: data.accent,
             width: `${((step + 1) / totalSteps) * 100}%`,
@@ -334,7 +362,7 @@ function OnboardingOverlay({ step, totalSteps, onNext, onPrev, onSkip, onFinish 
 
           {/* Title */}
           <h2 style={{
-            color: "#e2e8f0", fontSize: 22, fontWeight: 800,
+            color: t("text"), fontSize: 22, fontWeight: 800,
             textAlign: "center", margin: "12px 0 4px", letterSpacing: "-0.3px",
           }}>
             {data.title}
@@ -347,7 +375,7 @@ function OnboardingOverlay({ step, totalSteps, onNext, onPrev, onSkip, onFinish 
 
           {/* Body */}
           <p style={{
-            color: "#94a3b8", fontSize: 14, lineHeight: 1.7,
+            color: t("textSecondary"), fontSize: 14, lineHeight: 1.7,
             textAlign: "center", margin: "0 0 28px",
           }}>
             {data.body}
@@ -368,8 +396,8 @@ function OnboardingOverlay({ step, totalSteps, onNext, onPrev, onSkip, onFinish 
           <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
             {!isFirst && (
               <button onClick={onPrev} style={{
-                background: "#1e293b", border: "1px solid #334155", borderRadius: 8,
-                color: "#94a3b8", padding: "10px 20px", fontSize: 13,
+                background: t("input"), border: `1px solid ${t("borderSubtle")}`, borderRadius: 8,
+                color: t("textSecondary"), padding: "10px 20px", fontSize: 13,
                 cursor: "pointer", fontWeight: 600,
               }}>
                 Back
@@ -377,8 +405,8 @@ function OnboardingOverlay({ step, totalSteps, onNext, onPrev, onSkip, onFinish 
             )}
             {isFirst && (
               <button onClick={onSkip} style={{
-                background: "transparent", border: "1px solid #334155", borderRadius: 8,
-                color: "#64748b", padding: "10px 20px", fontSize: 13,
+                background: "transparent", border: `1px solid ${t("borderSubtle")}`, borderRadius: 8,
+                color: t("textTertiary"), padding: "10px 20px", fontSize: 13,
                 cursor: "pointer",
               }}>
                 Skip tutorial
@@ -414,6 +442,8 @@ const _saved = loadSaved();
 
 export default function TransomCalculator() {
   const [tab, setTab] = useState("quick");
+  const [darkMode, setDarkMode] = useState(_saved.darkMode !== false); // default dark
+  t = (key) => THEMES[darkMode ? "dark" : "light"][key]; // update module-level theme accessor
 
   // ── Onboarding tutorial state ──
   const [showTutorial, setShowTutorial] = useState(!_saved._tutorialDone);
@@ -487,13 +517,13 @@ export default function TransomCalculator() {
       transomWidth, centreHeight, sideHeight, transomAngle, thickness, materialId,
       engineConfig, cutoutWidth, cutoutHeight, cutoutCount, wastagePercent,
       rodSpacing, hRodDiameter, vRodDiameter, shellThickness, minCover,
-      selectedLocation, batchWeight, maxPourHeight, _tutorialDone: true,
+      selectedLocation, batchWeight, maxPourHeight, darkMode, _tutorialDone: true,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [transomWidth, centreHeight, sideHeight, transomAngle, thickness, materialId,
       engineConfig, cutoutWidth, cutoutHeight, cutoutCount, wastagePercent,
       rodSpacing, hRodDiameter, vRodDiameter, shellThickness, minCover,
-      selectedLocation, batchWeight, maxPourHeight]);
+      selectedLocation, batchWeight, maxPourHeight, darkMode]);
 
   const searchTimeoutRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -696,7 +726,9 @@ export default function TransomCalculator() {
     // Coordinate: y measured from bottom of V (lowest point) upward
     // Triangle zone: y = 0 to triH, width = W * y / triH
     // Rectangle zone: y = triH to centreH, width = W
+    // Cutout zone: y = centreH - cutoutH to centreH, subtract cutoutWidth × overlap
     const triH = centreHeight - sideHeight; // height of triangle zone (vertical)
+    const cutoutYStart = hasCutout ? centreHeight - cutoutHeight : centreHeight;
     const pourBands = [];
     const numPours = Math.ceil(centreHeight / maxPourHeight);
     let cumulativeVol = 0;
@@ -718,6 +750,14 @@ export default function TransomCalculator() {
       const rHi = y2;
       if (rHi > rLo) {
         vertArea_mm2 += transomWidth * (rHi - rLo);
+      }
+      // Subtract cutout overlap (cutout is at top of transom)
+      if (hasCutout) {
+        const cLo = Math.max(y1, cutoutYStart);
+        const cHi = Math.min(y2, centreHeight);
+        if (cHi > cLo) {
+          vertArea_mm2 -= cutoutWidth * (cHi - cLo) * cutoutCount;
+        }
       }
       // Volume = vertArea * thickness / cos(angle)
       // vertArea is in mm², thickness in mm, result in mm³
@@ -1016,7 +1056,7 @@ export default function TransomCalculator() {
   return (
     <div style={{
       fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
-      background: "#020617", color: "#e2e8f0", minHeight: "100vh", padding: "24px 16px",
+      background: t("bg"), color: t("text"), minHeight: "100vh", padding: "24px 16px",
     }}>
       {/* ═══ ONBOARDING TUTORIAL ═══ */}
       {showTutorial && (
@@ -1037,38 +1077,49 @@ export default function TransomCalculator() {
             <h1 style={{ fontSize: 22, fontWeight: 800, color: "#f59e0b", margin: 0, letterSpacing: "-0.5px" }}>
               TitanPour &mdash; Transom Engineering Calculator
             </h1>
-            <p style={{ color: "#64748b", fontSize: 13, margin: "4px 0 0" }}>
+            <p style={{ color: t("textTertiary"), fontSize: 13, margin: "4px 0 0" }}>
               Pourable composite transom system &middot; Area &amp; volume &middot; Rod spacing &middot; Mix calculator &middot; Live weather &middot; Job summary
             </p>
           </div>
-          <button
-            onClick={reopenTutorial}
-            style={{
-              background: "#1e293b", border: "1px solid #334155", borderRadius: 8,
-              color: "#94a3b8", padding: "6px 14px", fontSize: 12, cursor: "pointer",
-              whiteSpace: "nowrap", flexShrink: 0,
-            }}
-          >
-            ? Tutorial
-          </button>
+          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              style={{
+                background: t("input"), border: `1px solid ${t("borderSubtle")}`, borderRadius: 8,
+                color: t("textSecondary"), padding: "6px 14px", fontSize: 14, cursor: "pointer",
+              }}
+              title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {darkMode ? "\u2600" : "\u263D"}
+            </button>
+            <button
+              onClick={reopenTutorial}
+              style={{
+                background: t("input"), border: `1px solid ${t("borderSubtle")}`, borderRadius: 8,
+                color: t("textSecondary"), padding: "6px 14px", fontSize: 12, cursor: "pointer",
+              }}
+            >
+              ? Tutorial
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
         <div style={{ display: "flex", gap: 4, marginBottom: 20, flexWrap: "wrap" }}>
-          {tabs.map((t) => (
+          {tabs.map((tb) => (
             <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
+              key={tb.id}
+              onClick={() => setTab(tb.id)}
               style={{
-                background: tab === t.id ? "#f59e0b" : "#1e293b",
-                color: tab === t.id ? "#020617" : "#94a3b8",
+                background: tab === tb.id ? "#f59e0b" : t("tabBg"),
+                color: tab === tb.id ? (darkMode ? "#020617" : "#ffffff") : t("tabText"),
                 border: "none", borderRadius: 8, padding: "8px 16px",
-                fontSize: 13, fontWeight: tab === t.id ? 700 : 500,
+                fontSize: 13, fontWeight: tab === tb.id ? 700 : 500,
                 cursor: "pointer", transition: "all 0.2s",
               }}
             >
-              {t.label}
-              {t.id === "temp" && forecastData?.current && (
+              {tb.label}
+              {tb.id === "temp" && forecastData?.current && (
                 <span style={{ marginLeft: 6, fontSize: 11, opacity: 0.8 }}>
                   {forecastData.current.temperature_2m.toFixed(0)}°C
                 </span>
@@ -1083,37 +1134,37 @@ export default function TransomCalculator() {
             <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
               {/* Left: inputs */}
               <div style={{ flex: 1, minWidth: 280 }}>
-                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
+                <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: `1px solid ${t("border")}`, marginBottom: 16 }}>
                   <h3 style={{ color: "#f59e0b", fontSize: 14, margin: "0 0 16px", fontWeight: 700 }}>MEASUREMENTS</h3>
                   <div style={{ marginBottom: 12, textAlign: "center" }}>
-                    <img src={transomDiagram} alt="Where to measure" style={{ width: "100%", maxWidth: 360, borderRadius: 8, border: "1px solid #1e293b" }} />
+                    <img src={transomDiagram} alt="Where to measure" style={{ width: "100%", maxWidth: 360, borderRadius: 8, border: `1px solid ${t("border")}` }} />
                   </div>
                   {/* Colour key matching diagram arrows */}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 12px", marginBottom: 16, fontSize: 12 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 2, background: "#3b82f6", flexShrink: 0 }} />
                       <span style={{ color: "#3b82f6", fontWeight: 700 }}>Blue</span>
-                      <span style={{ color: "#94a3b8" }}>= Width</span>
+                      <span style={{ color: t("textSecondary") }}>= Width</span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 2, background: "#22c55e", flexShrink: 0 }} />
                       <span style={{ color: "#22c55e", fontWeight: 700 }}>Green</span>
-                      <span style={{ color: "#94a3b8" }}>= Centre height</span>
+                      <span style={{ color: t("textSecondary") }}>= Centre height</span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 2, background: "#ef4444", flexShrink: 0 }} />
                       <span style={{ color: "#ef4444", fontWeight: 700 }}>Red</span>
-                      <span style={{ color: "#94a3b8" }}>= Side height</span>
+                      <span style={{ color: t("textSecondary") }}>= Side height</span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 2, background: "#a855f7", flexShrink: 0 }} />
                       <span style={{ color: "#a855f7", fontWeight: 700 }}>Purple</span>
-                      <span style={{ color: "#94a3b8" }}>= Cutout height</span>
+                      <span style={{ color: t("textSecondary") }}>= Cutout height</span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 2, background: "#e2e8f0", flexShrink: 0 }} />
-                      <span style={{ color: "#e2e8f0", fontWeight: 700 }}>Black</span>
-                      <span style={{ color: "#94a3b8" }}>= Cutout width</span>
+                      <span style={{ display: "inline-block", width: 12, height: 12, borderRadius: 2, background: "#1e293b", border: "1px solid #94a3b8", flexShrink: 0 }} />
+                      <span style={{ color: t("text"), fontWeight: 700 }}>Black</span>
+                      <span style={{ color: t("textSecondary") }}>= Cutout width</span>
                     </div>
                   </div>
                   <NumberInput label="Width" value={transomWidth} onChange={setTransomWidth} unit="mm" min={500} max={5000} labelColor="#3b82f6" />
@@ -1121,16 +1172,16 @@ export default function TransomCalculator() {
                   <NumberInput label="Side height (edges)" value={sideHeight} onChange={setSideHeight} unit="mm" min={50} max={1500} labelColor="#ef4444" />
                   <NumberInput label="Depth (total thickness)" value={thickness} onChange={setThickness} unit="mm" min={5} max={150} step={0.5} />
                 </div>
-                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
+                <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: `1px solid ${t("border")}`, marginBottom: 16 }}>
                   <h3 style={{ color: "#f59e0b", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>MOTORWELL CUTOUT</h3>
-                  <NumberInput label="Cutout width" value={cutoutWidth} onChange={setCutoutWidth} unit="mm" min={0} max={3000} labelColor="#e2e8f0" />
+                  <NumberInput label="Cutout width" value={cutoutWidth} onChange={setCutoutWidth} unit="mm" min={0} max={3000} labelColor="#1e293b" />
                   <NumberInput label="Cutout height" value={cutoutHeight} onChange={setCutoutHeight} unit="mm" min={0} max={1000} labelColor="#a855f7" />
                 </div>
               </div>
 
               {/* Right: key results */}
               <div style={{ flex: 1, minWidth: 280 }}>
-                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
+                <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: `1px solid ${t("border")}`, marginBottom: 16 }}>
                   <h3 style={{ color: "#3b82f6", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>RESULTS</h3>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                     <ResultBox label="Net area" value={quickCalc.netArea_m2.toFixed(4)} unit="m²" />
@@ -1151,15 +1202,15 @@ export default function TransomCalculator() {
         {tab === "calc" && (
           <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
             <div style={{ flex: 1, minWidth: 280 }}>
-              <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b" }}>
+              <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: `1px solid ${t("border")}` }}>
                 <h3 style={{ color: "#f59e0b", fontSize: 14, margin: "0 0 16px", fontWeight: 700 }}>TRANSOM DIMENSIONS</h3>
                 <div style={{ marginBottom: 16, textAlign: "center" }}>
                   <img
                     src={transomDiagram}
                     alt="Transom measurement guide — measure width across top, centre height at deepest point, side height at edges"
-                    style={{ width: "100%", maxWidth: 360, borderRadius: 8, border: "1px solid #1e293b" }}
+                    style={{ width: "100%", maxWidth: 360, borderRadius: 8, border: `1px solid ${t("border")}` }}
                   />
-                  <div style={{ color: "#64748b", fontSize: 11, marginTop: 6 }}>
+                  <div style={{ color: t("textTertiary"), fontSize: 11, marginTop: 6 }}>
                     Measure width across the top, centre height at the deepest point, side height at the edges
                   </div>
                 </div>
@@ -1169,17 +1220,17 @@ export default function TransomCalculator() {
                 <NumberInput label="Rake / Slope angle" value={transomAngle} onChange={setTransomAngle} unit="°" min={0} max={35} />
                 <NumberInput label="Total thickness" value={thickness} onChange={setThickness} unit="mm" min={5} max={150} step={0.5} />
                 <NumberInput label="Outer shell (existing skin)" value={shellThickness} onChange={setShellThickness} unit="mm" min={0} max={20} />
-                <div style={{ color: "#64748b", fontSize: 11, marginBottom: 4 }}>
+                <div style={{ color: t("textTertiary"), fontSize: 11, marginBottom: 4 }}>
                   Pour depth: <strong style={{ color: "#f59e0b" }}>{calcs.pourDepth}mm</strong> (thickness minus shell)
                 </div>
                 <div style={{ marginTop: 12, marginBottom: 8 }}>
-                  <label style={{ color: "#94a3b8", fontSize: 13 }}>Material</label>
+                  <label style={{ color: t("textSecondary"), fontSize: 13 }}>Material</label>
                   <select
                     value={materialId}
                     onChange={(e) => setMaterialId(e.target.value)}
                     style={{
-                      display: "block", width: "100%", background: "#1e293b",
-                      border: "1px solid #334155", borderRadius: 6, color: "#e2e8f0",
+                      display: "block", width: "100%", background: t("input"),
+                      border: `1px solid ${t("borderSubtle")}`, borderRadius: 6, color: t("text"),
                       padding: "8px 10px", fontSize: 13, marginTop: 4,
                     }}
                   >
@@ -1190,7 +1241,7 @@ export default function TransomCalculator() {
                 </div>
               </div>
 
-              <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginTop: 12 }}>
+              <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: `1px solid ${t("border")}`, marginTop: 12 }}>
                 <h3 style={{ color: "#ef4444", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>ENGINE CONFIGURATION</h3>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
                   {ENGINE_CONFIGS.map((cfg) => (
@@ -1198,10 +1249,10 @@ export default function TransomCalculator() {
                       key={cfg.id}
                       onClick={() => handleEngineConfig(cfg.id)}
                       style={{
-                        background: engineConfig === cfg.id ? "#f59e0b20" : "#1e293b",
-                        border: engineConfig === cfg.id ? "1px solid #f59e0b" : "1px solid #334155",
+                        background: engineConfig === cfg.id ? "#f59e0b20" : t("input"),
+                        border: engineConfig === cfg.id ? "1px solid #f59e0b" : `1px solid ${t("borderSubtle")}`,
                         borderRadius: 6, padding: "6px 10px", fontSize: 11, cursor: "pointer",
-                        color: engineConfig === cfg.id ? "#f59e0b" : "#94a3b8",
+                        color: engineConfig === cfg.id ? "#f59e0b" : t("textSecondary"),
                         fontWeight: engineConfig === cfg.id ? 700 : 400,
                       }}
                     >
@@ -1221,7 +1272,7 @@ export default function TransomCalculator() {
                         On slope at {transomAngle}&deg;: {calcs.cutoutSlopeHeight}mm actual cut height
                       </div>
                     )}
-                    <div style={{ color: "#64748b", fontSize: 11, marginTop: 4 }}>
+                    <div style={{ color: t("textTertiary"), fontSize: 11, marginTop: 4 }}>
                       {cutoutCount > 1 ? `${cutoutCount} cutouts @ ${cutoutWidth} x ${cutoutHeight} mm each` : `${cutoutWidth} x ${cutoutHeight} mm`}
                       {cutoutCount > 1 && ` — total cutout area: ${calcs.cutoutArea_m2} m²`}
                     </div>
@@ -1229,7 +1280,7 @@ export default function TransomCalculator() {
                 )}
               </div>
 
-              <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginTop: 12 }}>
+              <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: `1px solid ${t("border")}`, marginTop: 12 }}>
                 <h3 style={{ color: "#3b82f6", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>RESIN VOLUME</h3>
                 <NumberInput label="Wastage allowance" value={wastagePercent} onChange={setWastagePercent} unit="%" min={0} max={30} />
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
@@ -1245,7 +1296,7 @@ export default function TransomCalculator() {
             </div>
 
             <div style={{ flex: 1, minWidth: 280 }}>
-              <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b" }}>
+              <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: `1px solid ${t("border")}` }}>
                 <h3 style={{ color: "#22c55e", fontSize: 14, margin: "0 0 16px", fontWeight: 700 }}>RESULTS</h3>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   <ResultBox label="Centre slope height" value={calcs.centreSlopeHeight} unit="mm" />
@@ -1259,9 +1310,9 @@ export default function TransomCalculator() {
                 </div>
               </div>
 
-              <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginTop: 12 }}>
-                <h3 style={{ color: "#64748b", fontSize: 12, margin: "0 0 12px" }}>TRANSOM FACE-ON (PENTAGON SHAPE)</h3>
-                <svg viewBox="0 0 300 200" style={{ width: "100%", maxHeight: 200, background: "#020617", borderRadius: 8 }}>
+              <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: `1px solid ${t("border")}`, marginTop: 12 }}>
+                <h3 style={{ color: t("textTertiary"), fontSize: 12, margin: "0 0 12px" }}>TRANSOM FACE-ON (PENTAGON SHAPE)</h3>
+                <svg viewBox="0 0 300 200" style={{ width: "100%", maxHeight: 200, background: t("bg"), borderRadius: 8 }}>
                   {(() => {
                     // Pentagon: rectangle top + V bottom
                     const maxH = Math.max(centreHeight, 1);
@@ -1285,12 +1336,12 @@ export default function TransomCalculator() {
                         <line x1={150} y1={y0} x2={150} y2={y0 + cH} stroke="#22c55e" strokeWidth="0.8" strokeDasharray="3,2" />
                         <text x={156} y={y0 + cH / 2} fill="#22c55e" fontSize="8" textAnchor="start">{centreHeight}mm</text>
                         {/* Width label */}
-                        <text x="150" y={y0 + cH + 18} fill="#64748b" fontSize="8" textAnchor="middle">{transomWidth}mm wide</text>
+                        <text x="150" y={y0 + cH + 18} fill={t("textTertiary")} fontSize="8" textAnchor="middle">{transomWidth}mm wide</text>
                         {hasCutout && (
                           <>
                             <rect
                               x={150 - (cutoutWidth * scale) / 2} y={y0} width={cutoutWidth * scale} height={Math.min(cutoutHeight * scale, sH)}
-                              fill="#020617" stroke="#ef4444" strokeWidth="1" strokeDasharray="3,2"
+                              fill={t("bg")} stroke="#ef4444" strokeWidth="1" strokeDasharray="3,2"
                             />
                             <text x="150" y={y0 + Math.min(cutoutHeight * scale, sH) + 10} fill="#ef4444" fontSize="7" textAnchor="middle">cutout</text>
                           </>
@@ -1309,7 +1360,7 @@ export default function TransomCalculator() {
           <div>
             <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
               <div style={{ flex: 1, minWidth: 280 }}>
-                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 12 }}>
+                <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: `1px solid ${t("border")}`, marginBottom: 12 }}>
                   <h3 style={{ color: "#f59e0b", fontSize: 14, margin: "0 0 16px", fontWeight: 700 }}>ROD GRID PARAMETERS</h3>
                   <NumberInput label="Rod spacing (H & V)" value={rodSpacing} onChange={setRodSpacing} unit="mm" min={20} max={300} />
                   <NumberInput label="Horizontal rod diameter" value={hRodDiameter} onChange={setHRodDiameter} unit="mm" min={2} max={20} />
@@ -1324,13 +1375,13 @@ export default function TransomCalculator() {
 
                 {/* Cover / fit analysis */}
                 <div style={{
-                  background: "#0f172a", borderRadius: 12, padding: 20, marginBottom: 12,
+                  background: t("card"), borderRadius: 12, padding: 20, marginBottom: 12,
                   border: calcs.stackFits ? "1px solid #1e293b" : "1px solid #ef444460",
                 }}>
                   <h3 style={{ color: "#3b82f6", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>COVER &amp; FIT CHECK</h3>
-                  <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 12, lineHeight: 1.6 }}>
-                    Total thickness: <strong style={{ color: "#e2e8f0" }}>{thickness}mm</strong> &middot;
-                    Shell: <strong style={{ color: "#e2e8f0" }}>{shellThickness}mm</strong> &middot;
+                  <div style={{ fontSize: 12, color: t("textSecondary"), marginBottom: 12, lineHeight: 1.6 }}>
+                    Total thickness: <strong style={{ color: t("text") }}>{thickness}mm</strong> &middot;
+                    Shell: <strong style={{ color: t("text") }}>{shellThickness}mm</strong> &middot;
                     Pour depth: <strong style={{ color: "#f59e0b" }}>{calcs.pourDepth}mm</strong> &middot;
                     Min cover: <strong style={{ color: "#f59e0b" }}>{minCover}mm</strong>
                   </div>
@@ -1342,8 +1393,8 @@ export default function TransomCalculator() {
                     border: `1px solid ${calcs.hFits ? "#22c55e30" : "#ef444440"}`,
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <div style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 600 }}>
-                        Horizontal &oslash;{hRodDiameter}mm <span style={{ color: "#94a3b8", fontWeight: 400, fontSize: 11 }}>— cover: {calcs.hCover}mm</span>
+                      <div style={{ color: t("text"), fontSize: 13, fontWeight: 600 }}>
+                        Horizontal &oslash;{hRodDiameter}mm <span style={{ color: t("textSecondary"), fontWeight: 400, fontSize: 11 }}>— cover: {calcs.hCover}mm</span>
                       </div>
                       <div style={{
                         padding: "3px 8px", borderRadius: 4, fontSize: 10, fontWeight: 700,
@@ -1362,8 +1413,8 @@ export default function TransomCalculator() {
                     border: `1px solid ${calcs.vFits ? "#22c55e30" : "#ef444440"}`,
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <div style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 600 }}>
-                        Vertical &oslash;{vRodDiameter}mm <span style={{ color: "#94a3b8", fontWeight: 400, fontSize: 11 }}>— cover: {calcs.vCover}mm</span>
+                      <div style={{ color: t("text"), fontSize: 13, fontWeight: 600 }}>
+                        Vertical &oslash;{vRodDiameter}mm <span style={{ color: t("textSecondary"), fontWeight: 400, fontSize: 11 }}>— cover: {calcs.vCover}mm</span>
                       </div>
                       <div style={{
                         padding: "3px 8px", borderRadius: 4, fontSize: 10, fontWeight: 700,
@@ -1382,9 +1433,9 @@ export default function TransomCalculator() {
                     border: `1px solid ${calcs.stackFits ? "#22c55e30" : "#ef444440"}`,
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <div style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 600 }}>
+                      <div style={{ color: t("text"), fontSize: 13, fontWeight: 600 }}>
                         At crossing ({hRodDiameter}+{vRodDiameter}={hRodDiameter + vRodDiameter}mm)
-                        <span style={{ color: "#94a3b8", fontWeight: 400, fontSize: 11 }}> — cover: {calcs.stackCover}mm</span>
+                        <span style={{ color: t("textSecondary"), fontWeight: 400, fontSize: 11 }}> — cover: {calcs.stackCover}mm</span>
                       </div>
                       <div style={{
                         padding: "3px 8px", borderRadius: 4, fontSize: 10, fontWeight: 700,
@@ -1406,10 +1457,10 @@ export default function TransomCalculator() {
 
                   {/* Cross-section at crossing */}
                   <div style={{ marginTop: 14 }}>
-                    <div style={{ color: "#64748b", fontSize: 11, marginBottom: 6 }}>CROSS-SECTION AT ROD CROSSING</div>
-                    <svg viewBox="0 0 200 100" style={{ width: "100%", maxWidth: 300, background: "#020617", borderRadius: 8 }}>
+                    <div style={{ color: t("textTertiary"), fontSize: 11, marginBottom: 6 }}>CROSS-SECTION AT ROD CROSSING</div>
+                    <svg viewBox="0 0 200 100" style={{ width: "100%", maxWidth: 300, background: t("bg"), borderRadius: 8 }}>
                       <rect x="40" y="10" width="120" height="80" fill="#b4530920" stroke="#f59e0b" strokeWidth="1.5" rx="2" />
-                      <text x="100" y="7" fill="#64748b" fontSize="7" textAnchor="middle">{thickness}mm</text>
+                      <text x="100" y="7" fill={t("textTertiary")} fontSize="7" textAnchor="middle">{thickness}mm</text>
                       {(() => {
                         const scale = 70 / thickness;
                         const cy = 50;
@@ -1432,11 +1483,11 @@ export default function TransomCalculator() {
                 </div>
 
                 {/* Auto rod sizing (1/3 rule) */}
-                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 12 }}>
+                <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: `1px solid ${t("border")}`, marginBottom: 12 }}>
                   <h3 style={{ color: "#a855f7", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>AUTO ROD SIZING (1/3 RULE)</h3>
                   <div style={{
-                    padding: "12px 16px", background: "#1e293b", borderRadius: 8, marginBottom: 12,
-                    fontSize: 12, color: "#94a3b8", lineHeight: 1.8, fontFamily: "monospace",
+                    padding: "12px 16px", background: t("input"), borderRadius: 8, marginBottom: 12,
+                    fontSize: 12, color: t("textSecondary"), lineHeight: 1.8, fontFamily: "monospace",
                   }}>
                     <div>Pour depth = {thickness} &minus; {shellThickness} = <strong style={{ color: "#f59e0b" }}>{quickCalc.pourDepth}mm</strong></div>
                     <div>1/3 for rods = {quickCalc.pourDepth} &divide; 3 = <strong style={{ color: "#f59e0b" }}>{quickCalc.stackedTarget.toFixed(1)}mm</strong> stacked</div>
@@ -1449,15 +1500,15 @@ export default function TransomCalculator() {
                     <ResultBox label="Cover each side" value={quickCalc.actualCover.toFixed(1)} unit="mm" />
                   </div>
                   {quickCalc.actualCover < 10 && (
-                    <div style={{ marginTop: 8, padding: "8px 12px", background: "#ef444420", border: "1px solid #ef444460", borderRadius: 6, fontSize: 11, color: "#fca5a5" }}>
+                    <div style={{ marginTop: 8, padding: "8px 12px", background: "#ef444420", border: `1px solid ${t("dangerBorder")}`, borderRadius: 6, fontSize: 11, color: t("dangerText") }}>
                       Cover is under 10mm — consider thinner rods or thicker transom.
                     </div>
                   )}
                 </div>
 
                 {/* 1/3 rule cross section */}
-                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 12 }}>
-                  <h3 style={{ color: "#64748b", fontSize: 12, margin: "0 0 12px", fontWeight: 700 }}>1/3 RULE CROSS SECTION</h3>
+                <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: `1px solid ${t("border")}`, marginBottom: 12 }}>
+                  <h3 style={{ color: t("textTertiary"), fontSize: 12, margin: "0 0 12px", fontWeight: 700 }}>1/3 RULE CROSS SECTION</h3>
                   <svg viewBox="0 0 200 120" style={{ width: "100%", maxWidth: 300 }}>
                     <rect x="20" y="10" width="160" height="100" rx="2" fill="none" stroke="#475569" strokeWidth="1" />
                     {(() => {
@@ -1490,8 +1541,8 @@ export default function TransomCalculator() {
 
               <div style={{ flex: 1, minWidth: 280 }}>
                 {/* Grid results */}
-                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 12 }}>
-                  <div style={{ color: "#64748b", fontSize: 11, marginBottom: 8 }}>AT {rodSpacing}mm SPACING &mdash; H &oslash;{hRodDiameter}mm / V &oslash;{vRodDiameter}mm &mdash; H rods 30mm shorter for clearance</div>
+                <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: `1px solid ${t("border")}`, marginBottom: 12 }}>
+                  <div style={{ color: t("textTertiary"), fontSize: 11, marginBottom: 8 }}>AT {rodSpacing}mm SPACING &mdash; H &oslash;{hRodDiameter}mm / V &oslash;{vRodDiameter}mm &mdash; H rods 30mm shorter for clearance</div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                     <ResultBox label="Horizontal rods" value={calcs.hRods} unit="rods" />
                     <ResultBox label="Vertical rods" value={calcs.vRods} unit="rods" />
@@ -1511,9 +1562,9 @@ export default function TransomCalculator() {
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                       {calcs.hRodDetails.map((r, i) => (
                         <span key={i} style={{
-                          background: r.zone === "RECT" ? "#1e293b" : "#f59e0b15",
-                          border: "1px solid #334155", borderRadius: 4,
-                          padding: "2px 6px", fontSize: 11, color: "#e2e8f0",
+                          background: r.zone === "RECT" ? t("input") : "#f59e0b15",
+                          border: `1px solid ${t("borderSubtle")}`, borderRadius: 4,
+                          padding: "2px 6px", fontSize: 11, color: t("text"),
                         }}>
                           {r.length.toFixed(0)}mm
                         </span>
@@ -1523,8 +1574,8 @@ export default function TransomCalculator() {
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                       {calcs.vRodDetails.map((r, i) => (
                         <span key={i} style={{
-                          background: "#1e293b", border: "1px solid #334155", borderRadius: 4,
-                          padding: "2px 6px", fontSize: 11, color: "#e2e8f0",
+                          background: t("input"), border: `1px solid ${t("borderSubtle")}`, borderRadius: 4,
+                          padding: "2px 6px", fontSize: 11, color: t("text"),
                         }}>
                           {r.length.toFixed(0)}mm
                         </span>
@@ -1539,9 +1590,9 @@ export default function TransomCalculator() {
                 </div>
 
                 {/* Grid preview */}
-                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b" }}>
-                  <h3 style={{ color: "#64748b", fontSize: 12, margin: "0 0 12px" }}>ROD GRID PREVIEW (face-on)</h3>
-                  <svg viewBox="0 0 300 220" style={{ width: "100%", background: "#020617", borderRadius: 8 }}>
+                <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: `1px solid ${t("border")}` }}>
+                  <h3 style={{ color: t("textTertiary"), fontSize: 12, margin: "0 0 12px" }}>ROD GRID PREVIEW (face-on)</h3>
+                  <svg viewBox="0 0 300 220" style={{ width: "100%", background: t("bg"), borderRadius: 8 }}>
                     {(() => {
                       // Pentagon outline scaled to fit
                       const maxH = Math.max(parseFloat(calcs.centreSlopeHeight), 1);
@@ -1575,16 +1626,16 @@ export default function TransomCalculator() {
                           {hasCutout && (() => {
                             const cw = (cutoutWidth / transomWidth) * w;
                             const ch = Math.min((cutoutHeight / maxH) * svgCH, svgSH);
-                            return <rect x={150 - cw / 2} y={y0} width={cw} height={ch} fill="#020617" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="4,3" />;
+                            return <rect x={150 - cw / 2} y={y0} width={cw} height={ch} fill={t("bg")} stroke="#ef4444" strokeWidth="1.5" strokeDasharray="4,3" />;
                           })()}
                         </>
                       );
                     })()}
-                    <text x="150" y="210" fill="#64748b" fontSize="9" textAnchor="middle">{transomWidth}mm</text>
+                    <text x="150" y="210" fill={t("textTertiary")} fontSize="9" textAnchor="middle">{transomWidth}mm</text>
                     <text x="280" y="105" fill="#f59e0b" fontSize="8" textAnchor="start">H: {calcs.hRods}</text>
                     <text x="150" y="14" fill="#3b82f6" fontSize="8" textAnchor="middle">V: {calcs.vRods}</text>
                   </svg>
-                  <div style={{ marginTop: 12, padding: 10, background: "#1e293b", borderRadius: 8, fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>
+                  <div style={{ marginTop: 12, padding: 10, background: t("input"), borderRadius: 8, fontSize: 12, color: t("textSecondary"), lineHeight: 1.6 }}>
                     <strong style={{ color: "#f59e0b" }}>Pentagon shape:</strong> {transomWidth}mm wide, {centreHeight}mm centre, {sideHeight}mm sides.
                     H rods are 30mm shorter than panel width for clearance. V rods vary in length (shorter at edges, longest at centre).
                     <br/><br/>
@@ -1600,10 +1651,10 @@ export default function TransomCalculator() {
         {tab === "mix" && (
           <div>
             {/* Batch input */}
-            <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
+            <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: `1px solid ${t("border")}`, marginBottom: 16 }}>
               <h3 style={{ color: "#f59e0b", fontSize: 14, margin: "0 0 16px", fontWeight: 700 }}>BATCH SIZE</h3>
               <NumberInput label="Total batch weight" value={batchWeight} onChange={setBatchWeight} unit="kg" min={1} max={10000} step={10} />
-              <div style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>
+              <div style={{ color: t("textTertiary"), fontSize: 12, marginTop: 4 }}>
                 Ambient temperature: <strong style={{ color: ambientTemp >= 18 && ambientTemp <= 26 ? "#22c55e" : ambientTemp < 18 ? "#3b82f6" : "#ef4444" }}>
                   {ambientTemp.toFixed(1)}&deg;C
                 </strong>
@@ -1615,7 +1666,7 @@ export default function TransomCalculator() {
               {/* Left column */}
               <div style={{ flex: 1, minWidth: 280 }}>
                 {/* Mix breakdown */}
-                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
+                <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: `1px solid ${t("border")}`, marginBottom: 16 }}>
                   <h3 style={{ color: "#f59e0b", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>MIX BREAKDOWN</h3>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                     <ResultBox label="Resin (58%)" value={mixCalcs.resinMass.toFixed(1)} unit="kg" highlight />
@@ -1626,52 +1677,52 @@ export default function TransomCalculator() {
                 </div>
 
                 {/* Rod displacement */}
-                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
+                <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: `1px solid ${t("border")}`, marginBottom: 16 }}>
                   <h3 style={{ color: "#3b82f6", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>POUR VOLUME (ROD DISPLACEMENT)</h3>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                     <ResultBox label="Cavity volume" value={calcs.cavityLitres} unit="litres" />
                     <ResultBox label="Rod displacement" value={calcs.rodDisplacement_litres} unit="litres" />
                     <ResultBox label="Actual pour needed" value={calcs.pourVolume_litres} unit="litres" highlight />
                   </div>
-                  <div style={{ color: "#64748b", fontSize: 11, marginTop: 8 }}>
+                  <div style={{ color: t("textTertiary"), fontSize: 11, marginTop: 8 }}>
                     {calcs.totalRodCount} rods (H &oslash;{hRodDiameter}mm / V &oslash;{vRodDiameter}mm) displace {calcs.rodDisplacement_litres} litres from the cavity
                   </div>
                 </div>
 
                 {/* Pour breakdown by 140mm bands */}
-                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
+                <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: `1px solid ${t("border")}`, marginBottom: 16 }}>
                   <h3 style={{ color: "#a855f7", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>POUR BREAKDOWN</h3>
                   <NumberInput label="Max pour height" value={maxPourHeight} onChange={setMaxPourHeight} unit="mm" min={50} max={500} step={10} />
-                  <div style={{ marginTop: 12, borderRadius: 8, overflow: "hidden", border: "1px solid #1e293b" }}>
+                  <div style={{ marginTop: 12, borderRadius: 8, overflow: "hidden", border: `1px solid ${t("border")}` }}>
                     <div style={{
                       display: "grid", gridTemplateColumns: "50px 1fr 1fr 1fr",
-                      background: "#1e293b", padding: "8px 12px", gap: 8,
+                      background: t("input"), padding: "8px 12px", gap: 8,
                     }}>
-                      <div style={{ color: "#64748b", fontSize: 11, fontWeight: 700 }}>POUR</div>
-                      <div style={{ color: "#64748b", fontSize: 11, fontWeight: 700 }}>BAND (mm)</div>
-                      <div style={{ color: "#64748b", fontSize: 11, fontWeight: 700 }}>LITRES</div>
-                      <div style={{ color: "#64748b", fontSize: 11, fontWeight: 700 }}>CUMULATIVE</div>
+                      <div style={{ color: t("textTertiary"), fontSize: 11, fontWeight: 700 }}>POUR</div>
+                      <div style={{ color: t("textTertiary"), fontSize: 11, fontWeight: 700 }}>BAND (mm)</div>
+                      <div style={{ color: t("textTertiary"), fontSize: 11, fontWeight: 700 }}>LITRES</div>
+                      <div style={{ color: t("textTertiary"), fontSize: 11, fontWeight: 700 }}>CUMULATIVE</div>
                     </div>
                     {calcs.pourBands.map((band) => (
                       <div key={band.pour} style={{
                         display: "grid", gridTemplateColumns: "50px 1fr 1fr 1fr",
                         padding: "8px 12px", gap: 8,
-                        borderBottom: "1px solid #1e293b",
+                        borderBottom: `1px solid ${t("border")}`,
                       }}>
                         <div style={{ color: "#a855f7", fontSize: 13, fontWeight: 700 }}>#{band.pour}</div>
-                        <div style={{ color: "#94a3b8", fontSize: 13 }}>{band.fromY}&ndash;{band.toY}</div>
-                        <div style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 700 }}>{band.litres.toFixed(2)} L</div>
-                        <div style={{ color: "#64748b", fontSize: 13 }}>{band.cumulative.toFixed(2)} L</div>
+                        <div style={{ color: t("textSecondary"), fontSize: 13 }}>{band.fromY}&ndash;{band.toY}</div>
+                        <div style={{ color: t("text"), fontSize: 13, fontWeight: 700 }}>{band.litres.toFixed(2)} L</div>
+                        <div style={{ color: t("textTertiary"), fontSize: 13 }}>{band.cumulative.toFixed(2)} L</div>
                       </div>
                     ))}
                   </div>
-                  <div style={{ color: "#64748b", fontSize: 11, marginTop: 8 }}>
+                  <div style={{ color: t("textTertiary"), fontSize: 11, marginTop: 8 }}>
                     {calcs.pourBands.length} pours at {maxPourHeight}mm max. Measured from bottom of V upward. Volumes are cavity (before rod displacement).
                   </div>
                 </div>
 
                 {/* Retarder */}
-                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b" }}>
+                <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: `1px solid ${t("border")}` }}>
                   <h3 style={{ color: "#22c55e", fontSize: 14, margin: "0 0 12px", fontWeight: 700 }}>RETARDER</h3>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                     <ResultBox label="Dose (0.025% of resin)" value={mixCalcs.retarderGrams.toFixed(0)} unit="grams" highlight />
@@ -1688,23 +1739,23 @@ export default function TransomCalculator() {
 
               {/* Right column — catalyst */}
               <div style={{ flex: 1, minWidth: 280 }}>
-                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
+                <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: `1px solid ${t("border")}`, marginBottom: 16 }}>
                   <h3 style={{ color: "#ef4444", fontSize: 14, margin: "0 0 4px", fontWeight: 700 }}>CATALYST — TRIGONOX 239</h3>
-                  <div style={{ color: "#64748b", fontSize: 12, marginBottom: 16 }}>
+                  <div style={{ color: t("textTertiary"), fontSize: 12, marginBottom: 16 }}>
                     Recommended level at {ambientTemp.toFixed(1)}&deg;C: <strong style={{ color: "#f59e0b" }}>{mixCalcs.recommendedCatPct}% of resin</strong>
                   </div>
 
                   {/* Catalyst table */}
-                  <div style={{ borderRadius: 8, overflow: "hidden", border: "1px solid #1e293b" }}>
+                  <div style={{ borderRadius: 8, overflow: "hidden", border: `1px solid ${t("border")}` }}>
                     {/* Header */}
                     <div style={{
                       display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr",
-                      background: "#1e293b", padding: "8px 12px", gap: 8,
+                      background: t("input"), padding: "8px 12px", gap: 8,
                     }}>
-                      <div style={{ color: "#64748b", fontSize: 11, fontWeight: 700 }}>% OF RESIN</div>
-                      <div style={{ color: "#64748b", fontSize: 11, fontWeight: 700 }}>% OF MIX</div>
-                      <div style={{ color: "#64748b", fontSize: 11, fontWeight: 700 }}>WEIGH OUT</div>
-                      <div style={{ color: "#64748b", fontSize: 11, fontWeight: 700 }}>TEMP RANGE</div>
+                      <div style={{ color: t("textTertiary"), fontSize: 11, fontWeight: 700 }}>% OF RESIN</div>
+                      <div style={{ color: t("textTertiary"), fontSize: 11, fontWeight: 700 }}>% OF MIX</div>
+                      <div style={{ color: t("textTertiary"), fontSize: 11, fontWeight: 700 }}>WEIGH OUT</div>
+                      <div style={{ color: t("textTertiary"), fontSize: 11, fontWeight: 700 }}>TEMP RANGE</div>
                     </div>
                     {/* Rows */}
                     {mixCalcs.catalystLevels.map((lvl) => (
@@ -1713,18 +1764,18 @@ export default function TransomCalculator() {
                         padding: "10px 12px", gap: 8,
                         background: lvl.recommended ? "#f59e0b12" : "transparent",
                         borderLeft: lvl.recommended ? "3px solid #f59e0b" : "3px solid transparent",
-                        borderBottom: "1px solid #1e293b",
+                        borderBottom: `1px solid ${t("border")}`,
                       }}>
-                        <div style={{ color: "#e2e8f0", fontSize: 14, fontWeight: lvl.recommended ? 700 : 400 }}>
+                        <div style={{ color: t("text"), fontSize: 14, fontWeight: lvl.recommended ? 700 : 400 }}>
                           {lvl.pctResin}%
                         </div>
-                        <div style={{ color: "#94a3b8", fontSize: 14 }}>
+                        <div style={{ color: t("textSecondary"), fontSize: 14 }}>
                           {lvl.pctMix.toFixed(3)}%
                         </div>
-                        <div style={{ color: lvl.recommended ? "#f59e0b" : "#e2e8f0", fontSize: 14, fontWeight: 700 }}>
+                        <div style={{ color: lvl.recommended ? "#f59e0b" : t("text"), fontSize: 14, fontWeight: 700 }}>
                           {lvl.kg.toFixed(2)} kg
                         </div>
-                        <div style={{ fontSize: 11, color: "#94a3b8" }}>
+                        <div style={{ fontSize: 11, color: t("textSecondary") }}>
                           {lvl.pctResin === 1.2 && "> 26°C"}
                           {lvl.pctResin === 1.5 && "18–26°C"}
                           {lvl.pctResin === 2.0 && "< 18°C"}
@@ -1736,15 +1787,15 @@ export default function TransomCalculator() {
                 </div>
 
                 {/* The formula */}
-                <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
-                  <h3 style={{ color: "#64748b", fontSize: 12, margin: "0 0 12px", fontWeight: 700 }}>THE FORMULA</h3>
-                  <div style={{ color: "#94a3b8", fontSize: 12, lineHeight: 2, fontFamily: "monospace" }}>
+                <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: `1px solid ${t("border")}`, marginBottom: 16 }}>
+                  <h3 style={{ color: t("textTertiary"), fontSize: 12, margin: "0 0 12px", fontWeight: 700 }}>THE FORMULA</h3>
+                  <div style={{ color: t("textSecondary"), fontSize: 12, lineHeight: 2, fontFamily: "monospace" }}>
                     <div>Batch weight &times; 0.58 = <strong style={{ color: "#f59e0b" }}>resin mass</strong></div>
                     <div>Resin mass &times; catalyst % = <strong style={{ color: "#ef4444" }}>catalyst to weigh</strong></div>
                     <div>Resin mass &times; 0.00025 = <strong style={{ color: "#22c55e" }}>retarder to weigh</strong></div>
                   </div>
-                  <div style={{ marginTop: 12, color: "#94a3b8", fontSize: 12, lineHeight: 1.6 }}>
-                    <strong style={{ color: "#e2e8f0" }}>Example:</strong> {batchWeight} kg &times; 0.58 = {mixCalcs.resinMass.toFixed(1)} kg resin<br/>
+                  <div style={{ marginTop: 12, color: t("textSecondary"), fontSize: 12, lineHeight: 1.6 }}>
+                    <strong style={{ color: t("text") }}>Example:</strong> {batchWeight} kg &times; 0.58 = {mixCalcs.resinMass.toFixed(1)} kg resin<br/>
                     {mixCalcs.resinMass.toFixed(1)} kg &times; {(mixCalcs.recommendedCatPct / 100).toFixed(3)} = <strong style={{ color: "#f59e0b" }}>
                       {(mixCalcs.resinMass * mixCalcs.recommendedCatPct / 100).toFixed(2)} kg Trigonox 239
                     </strong>
@@ -1753,11 +1804,11 @@ export default function TransomCalculator() {
 
                 {/* Safety warning */}
                 <div style={{
-                  padding: "16px 20px", background: "#1e0000",
-                  border: "1px solid #ef444460", borderRadius: 8,
+                  padding: "16px 20px", background: t("danger"),
+                  border: `1px solid ${t("dangerBorder")}`, borderRadius: 8,
                 }}>
                   <strong style={{ color: "#ef4444", fontSize: 13 }}>CRITICAL — DO NOT MIX UP</strong>
-                  <div style={{ color: "#fca5a5", fontSize: 12, lineHeight: 1.6, marginTop: 6 }}>
+                  <div style={{ color: t("dangerText"), fontSize: 12, lineHeight: 1.6, marginTop: 6 }}>
                     Catalyst % applies to the <strong>resin fraction only</strong> (58% of batch), never the total batch weight.
                     Calculating {mixCalcs.recommendedCatPct}% of the full {batchWeight} kg gives{" "}
                     <strong style={{ color: "#ef4444" }}>{(batchWeight * mixCalcs.recommendedCatPct / 100).toFixed(2)} kg</strong> — that is{" "}
@@ -1781,15 +1832,15 @@ export default function TransomCalculator() {
         {tab === "temp" && (
           <div>
             {/* ── LOCATION SEARCH ── */}
-            <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
+            <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: `1px solid ${t("border")}`, marginBottom: 16 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
                 <h3 style={{ color: "#f59e0b", fontSize: 14, margin: 0, fontWeight: 700 }}>INSTALLATION LOCATION</h3>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button
                     onClick={handleUseMyLocation}
                     style={{
-                      background: "#1e293b", border: "1px solid #334155", borderRadius: 6,
-                      color: "#94a3b8", padding: "6px 12px", fontSize: 12, cursor: "pointer",
+                      background: t("input"), border: `1px solid ${t("borderSubtle")}`, borderRadius: 6,
+                      color: t("textSecondary"), padding: "6px 12px", fontSize: 12, cursor: "pointer",
                     }}
                   >
                     Use my GPS
@@ -1798,9 +1849,9 @@ export default function TransomCalculator() {
                     onClick={handleRefresh}
                     disabled={loadingForecast}
                     style={{
-                      background: loadingForecast ? "#334155" : "#1e293b",
-                      border: "1px solid #334155", borderRadius: 6,
-                      color: loadingForecast ? "#64748b" : "#94a3b8",
+                      background: loadingForecast ? t("borderSubtle") : t("input"),
+                      border: `1px solid ${t("borderSubtle")}`, borderRadius: 6,
+                      color: loadingForecast ? t("textTertiary") : t("textSecondary"),
                       padding: "6px 12px", fontSize: 12, cursor: loadingForecast ? "default" : "pointer",
                     }}
                   >
@@ -1817,15 +1868,15 @@ export default function TransomCalculator() {
                   onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
                   placeholder="Search any city or town worldwide..."
                   style={{
-                    width: "100%", background: "#1e293b", border: "1px solid #334155",
+                    width: "100%", background: t("input"), border: `1px solid ${t("borderSubtle")}`,
                     borderRadius: showDropdown ? "8px 8px 0 0" : 8,
-                    color: "#e2e8f0", padding: "10px 14px", fontSize: 14, outline: "none",
+                    color: t("text"), padding: "10px 14px", fontSize: 14, outline: "none",
                   }}
                 />
                 {showDropdown && (
                   <div style={{
                     position: "absolute", top: "100%", left: 0, right: 0,
-                    background: "#1e293b", border: "1px solid #334155", borderTop: "none",
+                    background: t("input"), border: `1px solid ${t("borderSubtle")}`, borderTop: "none",
                     borderRadius: "0 0 8px 8px", zIndex: 10, maxHeight: 280, overflowY: "auto",
                   }}>
                     {searchResults.map((r) => (
@@ -1835,17 +1886,17 @@ export default function TransomCalculator() {
                         style={{
                           display: "block", width: "100%", background: "transparent",
                           border: "none", borderBottom: "1px solid #1e293b80",
-                          color: "#e2e8f0", padding: "10px 14px", textAlign: "left",
+                          color: t("text"), padding: "10px 14px", textAlign: "left",
                           cursor: "pointer", fontSize: 13,
                         }}
                         onMouseEnter={(e) => (e.currentTarget.style.background = "#334155")}
                         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                       >
                         <strong>{r.name}</strong>
-                        <span style={{ color: "#94a3b8" }}>
+                        <span style={{ color: t("textSecondary") }}>
                           {r.admin1 ? ` — ${r.admin1}, ` : " — "}{r.country}
                         </span>
-                        <span style={{ color: "#64748b", fontSize: 11, float: "right" }}>
+                        <span style={{ color: t("textTertiary"), fontSize: 11, float: "right" }}>
                           {Math.abs(r.latitude).toFixed(2)}°{r.latitude >= 0 ? "N" : "S"},{" "}
                           {Math.abs(r.longitude).toFixed(2)}°{r.longitude >= 0 ? "E" : "W"}
                         </span>
@@ -1858,12 +1909,12 @@ export default function TransomCalculator() {
               {/* Selected location display */}
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <div>
-                  <div style={{ color: "#e2e8f0", fontSize: 16, fontWeight: 700 }}>
+                  <div style={{ color: t("text"), fontSize: 16, fontWeight: 700 }}>
                     {selectedLocation.name}
                     {selectedLocation.admin1 ? `, ${selectedLocation.admin1}` : ""}
                     {selectedLocation.country ? `, ${selectedLocation.country}` : ""}
                   </div>
-                  <div style={{ color: "#64748b", fontSize: 12 }}>
+                  <div style={{ color: t("textTertiary"), fontSize: 12 }}>
                     {Math.abs(selectedLocation.latitude).toFixed(4)}°{selectedLocation.latitude >= 0 ? "N" : "S"},{" "}
                     {Math.abs(selectedLocation.longitude).toFixed(4)}°{selectedLocation.longitude >= 0 ? "E" : "W"}
                     {lastUpdated && (
@@ -1888,45 +1939,45 @@ export default function TransomCalculator() {
 
               return (
                 <div style={{
-                  background: "#0f172a", borderRadius: 12, padding: 20,
+                  background: t("card"), borderRadius: 12, padding: 20,
                   border: `2px solid ${verdict.color}40`, marginBottom: 16,
                 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
-                    <h3 style={{ color: "#e2e8f0", fontSize: 14, margin: 0, fontWeight: 700 }}>
+                    <h3 style={{ color: t("text"), fontSize: 14, margin: 0, fontWeight: 700 }}>
                       LIVE CONDITIONS
                     </h3>
-                    <div style={{ color: "#64748b", fontSize: 11 }}>{weatherDesc}</div>
+                    <div style={{ color: t("textTertiary"), fontSize: 11 }}>{weatherDesc}</div>
                   </div>
 
                   {/* Stat cards */}
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 10, marginBottom: 16 }}>
-                    <div style={{ background: "#020617", borderRadius: 8, padding: "12px 14px", textAlign: "center" }}>
-                      <div style={{ color: "#64748b", fontSize: 10, marginBottom: 4 }}>TEMPERATURE</div>
+                    <div style={{ background: t("bg"), borderRadius: 8, padding: "12px 14px", textAlign: "center" }}>
+                      <div style={{ color: t("textTertiary"), fontSize: 10, marginBottom: 4 }}>TEMPERATURE</div>
                       <div style={{ color: getTempColor(c.temperature_2m), fontSize: 28, fontWeight: 800 }}>
                         {c.temperature_2m.toFixed(1)}°
                       </div>
-                      <div style={{ color: "#64748b", fontSize: 10 }}>Feels {c.apparent_temperature.toFixed(1)}°</div>
+                      <div style={{ color: t("textTertiary"), fontSize: 10 }}>Feels {c.apparent_temperature.toFixed(1)}°</div>
                     </div>
-                    <div style={{ background: "#020617", borderRadius: 8, padding: "12px 14px", textAlign: "center" }}>
-                      <div style={{ color: "#64748b", fontSize: 10, marginBottom: 4 }}>HUMIDITY</div>
+                    <div style={{ background: t("bg"), borderRadius: 8, padding: "12px 14px", textAlign: "center" }}>
+                      <div style={{ color: t("textTertiary"), fontSize: 10, marginBottom: 4 }}>HUMIDITY</div>
                       <div style={{ color: c.relative_humidity_2m >= 85 ? "#ef4444" : c.relative_humidity_2m >= 80 ? "#f59e0b" : "#22c55e", fontSize: 28, fontWeight: 800 }}>
                         {c.relative_humidity_2m}%
                       </div>
-                      <div style={{ color: "#64748b", fontSize: 10 }}>{c.relative_humidity_2m >= 85 ? "Too high" : c.relative_humidity_2m >= 80 ? "Marginal" : "OK"}</div>
+                      <div style={{ color: t("textTertiary"), fontSize: 10 }}>{c.relative_humidity_2m >= 85 ? "Too high" : c.relative_humidity_2m >= 80 ? "Marginal" : "OK"}</div>
                     </div>
-                    <div style={{ background: "#020617", borderRadius: 8, padding: "12px 14px", textAlign: "center" }}>
-                      <div style={{ color: "#64748b", fontSize: 10, marginBottom: 4 }}>DEW POINT</div>
-                      <div style={{ color: "#e2e8f0", fontSize: 28, fontWeight: 800 }}>
+                    <div style={{ background: t("bg"), borderRadius: 8, padding: "12px 14px", textAlign: "center" }}>
+                      <div style={{ color: t("textTertiary"), fontSize: 10, marginBottom: 4 }}>DEW POINT</div>
+                      <div style={{ color: t("text"), fontSize: 28, fontWeight: 800 }}>
                         {c.dew_point_2m.toFixed(1)}°
                       </div>
-                      <div style={{ color: "#64748b", fontSize: 10 }}>Margin: {dewMargin}°C</div>
+                      <div style={{ color: t("textTertiary"), fontSize: 10 }}>Margin: {dewMargin}°C</div>
                     </div>
-                    <div style={{ background: "#020617", borderRadius: 8, padding: "12px 14px", textAlign: "center" }}>
-                      <div style={{ color: "#64748b", fontSize: 10, marginBottom: 4 }}>WIND</div>
-                      <div style={{ color: "#e2e8f0", fontSize: 28, fontWeight: 800 }}>
+                    <div style={{ background: t("bg"), borderRadius: 8, padding: "12px 14px", textAlign: "center" }}>
+                      <div style={{ color: t("textTertiary"), fontSize: 10, marginBottom: 4 }}>WIND</div>
+                      <div style={{ color: t("text"), fontSize: 28, fontWeight: 800 }}>
                         {c.wind_speed_10m.toFixed(0)}
                       </div>
-                      <div style={{ color: "#64748b", fontSize: 10 }}>km/h</div>
+                      <div style={{ color: t("textTertiary"), fontSize: 10 }}>km/h</div>
                     </div>
                   </div>
 
@@ -1944,7 +1995,7 @@ export default function TransomCalculator() {
                       </span>
                       <span style={{ color: verdict.color, fontWeight: 700, fontSize: 14 }}>{verdict.label}</span>
                     </div>
-                    <div style={{ color: "#94a3b8", fontSize: 12, lineHeight: 1.5 }}>
+                    <div style={{ color: t("textSecondary"), fontSize: 12, lineHeight: 1.5 }}>
                       {verdict.msg}
                       {isRaining && (
                         <><br/><strong style={{ color: "#3b82f6" }}>Currently raining/precipitating — do NOT lay up resin in wet conditions.</strong></>
@@ -1959,16 +2010,16 @@ export default function TransomCalculator() {
             })()}
 
             {loadingForecast && !forecastData && (
-              <div style={{ background: "#0f172a", borderRadius: 12, padding: 40, border: "1px solid #1e293b", marginBottom: 16, textAlign: "center" }}>
+              <div style={{ background: t("card"), borderRadius: 12, padding: 40, border: `1px solid ${t("border")}`, marginBottom: 16, textAlign: "center" }}>
                 <div style={{ color: "#f59e0b", fontSize: 14 }}>Fetching live weather data...</div>
               </div>
             )}
 
             {/* ── NEXT 24 HOURS ── */}
             {hourlyToday.length > 0 && (
-              <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
+              <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: `1px solid ${t("border")}`, marginBottom: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
-                  <h3 style={{ color: "#e2e8f0", fontSize: 14, margin: 0, fontWeight: 700 }}>TODAY — HOURLY FORECAST</h3>
+                  <h3 style={{ color: t("text"), fontSize: 14, margin: 0, fontWeight: 700 }}>TODAY — HOURLY FORECAST</h3>
                   {bestWindow && (
                     <div style={{ color: "#22c55e", fontSize: 12, fontWeight: 600 }}>
                       Best window: {String(bestWindow.startHour).padStart(2, "0")}:00 – {String(bestWindow.endHour).padStart(2, "0")}:00
@@ -1997,7 +2048,7 @@ export default function TransomCalculator() {
 
                       return (
                         <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", opacity: isDaylight ? 1 : 0.4 }}>
-                          <div style={{ color: "#e2e8f0", fontSize: 9, fontWeight: 600, marginBottom: 2 }}>
+                          <div style={{ color: t("text"), fontSize: 9, fontWeight: 600, marginBottom: 2 }}>
                             {h.temp.toFixed(0)}°
                           </div>
                           <div style={{
@@ -2012,7 +2063,7 @@ export default function TransomCalculator() {
                   </div>
                   <div style={{ display: "flex", gap: 2, minWidth: 500, padding: "4px 4px 0" }}>
                     {hourlyToday.map((h, i) => (
-                      <div key={i} style={{ flex: 1, textAlign: "center", color: "#64748b", fontSize: 9, fontWeight: 600 }}>
+                      <div key={i} style={{ flex: 1, textAlign: "center", color: t("textTertiary"), fontSize: 9, fontWeight: 600 }}>
                         {String(h.hour).padStart(2, "0")}
                       </div>
                     ))}
@@ -2025,7 +2076,7 @@ export default function TransomCalculator() {
                     {hourlyToday.map((h, i) => (
                       <div key={i} style={{
                         flex: 1, textAlign: "center", fontSize: 8,
-                        color: h.humidity >= 85 ? "#ef4444" : h.humidity >= 80 ? "#f59e0b" : "#64748b",
+                        color: h.humidity >= 85 ? "#ef4444" : h.humidity >= 80 ? "#f59e0b" : t("textTertiary"),
                       }}>
                         {h.humidity}%
                       </div>
@@ -2037,19 +2088,19 @@ export default function TransomCalculator() {
                 <div style={{ display: "flex", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                     <div style={{ width: 10, height: 10, background: "#22c55e", borderRadius: 2, opacity: 0.7 }} />
-                    <span style={{ color: "#94a3b8", fontSize: 10 }}>{"≥"}15°C Ideal</span>
+                    <span style={{ color: t("textSecondary"), fontSize: 10 }}>{"≥"}15°C Ideal</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                     <div style={{ width: 10, height: 10, background: "#f59e0b", borderRadius: 2, opacity: 0.7 }} />
-                    <span style={{ color: "#94a3b8", fontSize: 10 }}>10–15°C Workable</span>
+                    <span style={{ color: t("textSecondary"), fontSize: 10 }}>10–15°C Workable</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                     <div style={{ width: 10, height: 10, background: "#ef4444", borderRadius: 2, opacity: 0.7 }} />
-                    <span style={{ color: "#94a3b8", fontSize: 10 }}>&lt;10°C Risky</span>
+                    <span style={{ color: t("textSecondary"), fontSize: 10 }}>&lt;10°C Risky</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                     <div style={{ width: 10, height: 10, border: "1.5px solid #22c55e", borderRadius: 2, boxSizing: "border-box" }} />
-                    <span style={{ color: "#94a3b8", fontSize: 10 }}>Best window</span>
+                    <span style={{ color: t("textSecondary"), fontSize: 10 }}>Best window</span>
                   </div>
                 </div>
               </div>
@@ -2057,34 +2108,34 @@ export default function TransomCalculator() {
 
             {/* ── RECOMMENDED POUR DAYS ── */}
             {bestPourDays.length > 0 && (
-              <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #22c55e40", marginBottom: 16 }}>
+              <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: "1px solid #22c55e40", marginBottom: 16 }}>
                 <h3 style={{ color: "#22c55e", fontSize: 14, margin: "0 0 4px", fontWeight: 700 }}>RECOMMENDED POUR DAYS</h3>
-                <div style={{ color: "#64748b", fontSize: 12, marginBottom: 14 }}>
+                <div style={{ color: t("textTertiary"), fontSize: 12, marginBottom: 14 }}>
                   Top {bestPourDays.length} days ranked by temperature, conditions, and forecast confidence
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {bestPourDays.map((d, i) => (
                     <div key={d.date} style={{
                       display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
-                      background: i === 0 ? "#22c55e10" : "#1e293b",
-                      border: i === 0 ? "1px solid #22c55e40" : "1px solid #334155",
+                      background: i === 0 ? "#22c55e10" : t("input"),
+                      border: i === 0 ? "1px solid #22c55e40" : `1px solid ${t("borderSubtle")}`,
                       borderRadius: 8,
                     }}>
                       <div style={{
                         width: 28, height: 28, borderRadius: "50%", display: "flex",
                         alignItems: "center", justifyContent: "center",
-                        background: i === 0 ? "#22c55e" : "#334155",
-                        color: i === 0 ? "#020617" : "#94a3b8",
+                        background: i === 0 ? "#22c55e" : t("borderSubtle"),
+                        color: i === 0 ? "#020617" : t("textSecondary"),
                         fontSize: 13, fontWeight: 800,
                       }}>
                         {i + 1}
                       </div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ color: "#e2e8f0", fontSize: 14, fontWeight: 600 }}>
+                        <div style={{ color: t("text"), fontSize: 14, fontWeight: 600 }}>
                           {d.dayName} {d.dayNum} {d.month}
                           {i === 0 && <span style={{ color: "#22c55e", fontSize: 11, marginLeft: 8 }}>BEST</span>}
                         </div>
-                        <div style={{ color: "#94a3b8", fontSize: 12 }}>
+                        <div style={{ color: t("textSecondary"), fontSize: 12 }}>
                           {d.high.toFixed(0)}&deg;C high / {d.low.toFixed(0)}&deg;C low &middot; {d.weather} &middot; {d.reason}
                         </div>
                       </div>
@@ -2102,9 +2153,9 @@ export default function TransomCalculator() {
 
             {/* ── 3-WEEK OUTLOOK ── */}
             {dailyForecast.length > 0 && (
-              <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b", marginBottom: 16 }}>
+              <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: `1px solid ${t("border")}`, marginBottom: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
-                  <h3 style={{ color: "#e2e8f0", fontSize: 14, margin: 0, fontWeight: 700 }}>3-WEEK OUTLOOK</h3>
+                  <h3 style={{ color: t("text"), fontSize: 14, margin: 0, fontWeight: 700 }}>3-WEEK OUTLOOK</h3>
                   {bestDay && (
                     <div style={{ color: "#22c55e", fontSize: 12, fontWeight: 600 }}>
                       Best day: {bestDay.dayName} {bestDay.dayNum} {bestDay.month} ({bestDay.high.toFixed(0)}°C high)
@@ -2133,22 +2184,22 @@ export default function TransomCalculator() {
                         background: isBest ? "#22c55e08" : "transparent",
                       }}
                     >
-                      <div style={{ width: 80, color: i === 0 ? "#f59e0b" : "#94a3b8", fontSize: 13, fontWeight: i === 0 ? 700 : 400 }}>
+                      <div style={{ width: 80, color: i === 0 ? "#f59e0b" : t("textSecondary"), fontSize: 13, fontWeight: i === 0 ? 700 : 400 }}>
                         {i === 0 ? "Today" : `${d.dayName} ${d.dayNum}`}
                       </div>
-                      <div style={{ width: 35, color: "#94a3b8", fontSize: 12, textAlign: "right" }}>
+                      <div style={{ width: 35, color: t("textSecondary"), fontSize: 12, textAlign: "right" }}>
                         {d.low.toFixed(0)}°
                       </div>
-                      <div style={{ flex: 1, height: 8, background: "#1e293b", borderRadius: 4, position: "relative" }}>
+                      <div style={{ flex: 1, height: 8, background: t("input"), borderRadius: 4, position: "relative" }}>
                         <div style={{
                           position: "absolute", left: `${leftPct}%`, width: `${Math.max(widthPct, 2)}%`,
                           height: "100%", background: getTempColor(avgTemp), borderRadius: 4, opacity: 0.7,
                         }} />
                       </div>
-                      <div style={{ width: 35, color: "#e2e8f0", fontSize: 12, fontWeight: 600 }}>
+                      <div style={{ width: 35, color: t("text"), fontSize: 12, fontWeight: 600 }}>
                         {d.high.toFixed(0)}°
                       </div>
-                      <div style={{ width: 100, fontSize: 11, color: "#64748b" }}>{d.weather}</div>
+                      <div style={{ width: 100, fontSize: 11, color: t("textTertiary") }}>{d.weather}</div>
                       <div style={{
                         minWidth: 60, textAlign: "center",
                         background: `${d.verdict.color}20`, color: d.verdict.color,
@@ -2164,43 +2215,43 @@ export default function TransomCalculator() {
 
             {/* ── RESIN CURE REFERENCE ── */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
-              <div style={{ background: "#0f172a", borderRadius: 12, padding: 16, border: "1px solid #22c55e40" }}>
+              <div style={{ background: t("card"), borderRadius: 12, padding: 16, border: "1px solid #22c55e40" }}>
                 <h4 style={{ color: "#22c55e", fontSize: 13, margin: "0 0 8px" }}>{"✓"} IDEAL ({"≥"}15°C, RH &lt;80%)</h4>
-                <div style={{ color: "#94a3b8", fontSize: 12, lineHeight: 1.6 }}>
+                <div style={{ color: t("textSecondary"), fontSize: 12, lineHeight: 1.6 }}>
                   Polyester: normal catalyst ratio (1–2% MEKP)<br/>
                   Epoxy: standard hardener, 6–8hr pot life<br/>
                   Gel time: ~15–20 min (polyester)<br/>
                   Full cure: 24–48 hours<br/>
-                  <strong style={{ color: "#e2e8f0" }}>Optimal working conditions</strong>
+                  <strong style={{ color: t("text") }}>Optimal working conditions</strong>
                 </div>
               </div>
-              <div style={{ background: "#0f172a", borderRadius: 12, padding: 16, border: "1px solid #f59e0b40" }}>
+              <div style={{ background: t("card"), borderRadius: 12, padding: 16, border: "1px solid #f59e0b40" }}>
                 <h4 style={{ color: "#f59e0b", fontSize: 13, margin: "0 0 8px" }}>{"!"} WORKABLE (10–15°C)</h4>
-                <div style={{ color: "#94a3b8", fontSize: 12, lineHeight: 1.6 }}>
+                <div style={{ color: t("textSecondary"), fontSize: 12, lineHeight: 1.6 }}>
                   Polyester: increase catalyst 0.5–1%<br/>
                   Epoxy: slow/winter hardener required<br/>
                   Gel time: 25–40 min (polyester)<br/>
                   Full cure: 48–96 hours<br/>
-                  <strong style={{ color: "#e2e8f0" }}>Work midday, allow 50–100% extra cure</strong>
+                  <strong style={{ color: t("text") }}>Work midday, allow 50–100% extra cure</strong>
                 </div>
               </div>
-              <div style={{ background: "#0f172a", borderRadius: 12, padding: 16, border: "1px solid #ef444440" }}>
+              <div style={{ background: t("card"), borderRadius: 12, padding: 16, border: "1px solid #ef444440" }}>
                 <h4 style={{ color: "#ef4444", fontSize: 13, margin: "0 0 8px" }}>{"✗"} RISKY (&lt;10°C)</h4>
-                <div style={{ color: "#94a3b8", fontSize: 12, lineHeight: 1.6 }}>
+                <div style={{ color: t("textSecondary"), fontSize: 12, lineHeight: 1.6 }}>
                   Polyester: high risk of undercure<br/>
                   Epoxy: will not cross-link below 5°C<br/>
                   Gel time: &gt;60 min or may not gel<br/>
                   Full cure: may never fully cure<br/>
-                  <strong style={{ color: "#e2e8f0" }}>Heated workspace essential (min 10°C substrate)</strong>
+                  <strong style={{ color: t("text") }}>Heated workspace essential (min 10°C substrate)</strong>
                 </div>
               </div>
             </div>
 
             {/* Dew point reference */}
-            <div style={{ background: "#1e293b", borderRadius: 8, padding: 14, marginTop: 12, fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>
+            <div style={{ background: t("input"), borderRadius: 8, padding: 14, marginTop: 12, fontSize: 12, color: t("textSecondary"), lineHeight: 1.6 }}>
               <strong style={{ color: "#f59e0b" }}>Dew point rule:</strong> Substrate temperature must be at least 3°C above the dew point to prevent moisture condensation on the surface.
               Moisture on the layup surface will cause delamination, fisheyes, and incomplete bonding.
-              {" "}<strong style={{ color: "#e2e8f0" }}>Always check dew point margin before mixing resin.</strong>
+              {" "}<strong style={{ color: t("text") }}>Always check dew point margin before mixing resin.</strong>
               <br/>
               <strong style={{ color: "#f59e0b" }}>Humidity:</strong> Relative humidity above 80% slows surface cure and can cause amine blush (epoxy) or surface tackiness (polyester).
               Above 85% is a no-go for quality layup work.
@@ -2211,11 +2262,11 @@ export default function TransomCalculator() {
         {/* ===== JOB SUMMARY TAB ===== */}
         {tab === "summary" && (
           <div>
-            <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #f59e0b40", marginBottom: 16 }}>
+            <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: "1px solid #f59e0b40", marginBottom: 16 }}>
               <h3 style={{ color: "#f59e0b", fontSize: 16, margin: "0 0 4px", fontWeight: 800 }}>
                 TitanPour Job Summary
               </h3>
-              <p style={{ color: "#64748b", fontSize: 12, margin: "0 0 20px" }}>
+              <p style={{ color: t("textTertiary"), fontSize: 12, margin: "0 0 20px" }}>
                 All measurements and quantities for this transom job
               </p>
 
@@ -2294,7 +2345,7 @@ export default function TransomCalculator() {
                 const verdict = getCureVerdict(c.temperature_2m, c.relative_humidity_2m, c.dew_point_2m);
                 return (
                   <div>
-                    <div style={{ color: "#64748b", fontSize: 12, fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>
+                    <div style={{ color: t("textTertiary"), fontSize: 12, fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>
                       Current Conditions @ {selectedLocation.name}
                     </div>
                     <div style={{
@@ -2307,7 +2358,7 @@ export default function TransomCalculator() {
                       }}>
                         {verdict.status}
                       </span>
-                      <span style={{ color: "#e2e8f0", fontSize: 14, fontWeight: 600 }}>
+                      <span style={{ color: t("text"), fontSize: 14, fontWeight: 600 }}>
                         {c.temperature_2m.toFixed(1)}{"°"}C &middot; {c.relative_humidity_2m}% RH &middot; Dew {c.dew_point_2m.toFixed(1)}{"°"}C
                       </span>
                       <span style={{ color: verdict.color, fontSize: 12 }}>{verdict.label}</span>
@@ -2318,9 +2369,9 @@ export default function TransomCalculator() {
             </div>
 
             {/* Formulas reference */}
-            <div style={{ background: "#0f172a", borderRadius: 12, padding: 20, border: "1px solid #1e293b" }}>
-              <h3 style={{ color: "#64748b", fontSize: 12, margin: "0 0 12px", fontWeight: 700 }}>CALCULATION FORMULAS USED</h3>
-              <div style={{ color: "#94a3b8", fontSize: 11, lineHeight: 1.8, fontFamily: "monospace" }}>
+            <div style={{ background: t("card"), borderRadius: 12, padding: 20, border: `1px solid ${t("border")}` }}>
+              <h3 style={{ color: t("textTertiary"), fontSize: 12, margin: "0 0 12px", fontWeight: 700 }}>CALCULATION FORMULAS USED</h3>
+              <div style={{ color: t("textSecondary"), fontSize: 11, lineHeight: 1.8, fontFamily: "monospace" }}>
                 <div>Slope Height = Vertical Height / cos(Rake Angle)</div>
                 <div>Gross Area = Width &times; (Centre Slope H + Side Slope H) / 2</div>
                 <div>Cutout Area = Cutout Width &times; (Cutout Height / cos(Rake Angle)) &times; Count</div>
@@ -2337,9 +2388,9 @@ export default function TransomCalculator() {
 
         {/* ═══ SAFETY DISCLAIMER ═══ */}
         <div style={{
-          marginTop: 32, padding: "16px 20px", background: "#1e0000",
-          border: "1px solid #ef444460", borderRadius: 8,
-          fontSize: 11, color: "#fca5a5", lineHeight: 1.6,
+          marginTop: 32, padding: "16px 20px", background: t("danger"),
+          border: `1px solid ${t("dangerBorder")}`, borderRadius: 8,
+          fontSize: 11, color: t("dangerText"), lineHeight: 1.6,
         }}>
           <strong style={{ color: "#ef4444", fontSize: 12 }}>SAFETY NOTICE</strong><br/>
           This calculator provides estimates for planning and material ordering only. All calculations
