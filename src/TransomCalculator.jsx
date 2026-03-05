@@ -763,15 +763,23 @@ export default function TransomCalculator() {
       // vertArea is in mm², thickness in mm, result in mm³
       const bandVol_mm3 = vertArea_mm2 * thickness / cosAngle;
       const bandVol_litres = bandVol_mm3 / 1e6;
-      cumulativeVol += bandVol_litres;
       pourBands.push({
         pour: p + 1,
         fromY: y1,
         toY: y2,
         height: y2 - y1,
         litres: bandVol_litres,
-        cumulative: cumulativeVol,
+        cumulative: 0,
       });
+    }
+    // Scale bands down by rod displacement (distributed proportionally)
+    const bandTotal = pourBands.reduce((s, b) => s + b.litres, 0);
+    const scale = bandTotal > 0 ? pourVolume_litres / bandTotal : 1;
+    let cumPour = 0;
+    for (const b of pourBands) {
+      b.litres *= scale;
+      cumPour += b.litres;
+      b.cumulative = cumPour;
     }
 
     return {
@@ -1717,7 +1725,7 @@ export default function TransomCalculator() {
                     ))}
                   </div>
                   <div style={{ color: t("textTertiary"), fontSize: 11, marginTop: 8 }}>
-                    {calcs.pourBands.length} pours at {maxPourHeight}mm max. Measured from bottom of V upward. Volumes are cavity (before rod displacement).
+                    {calcs.pourBands.length} pours at {maxPourHeight}mm max. Measured from bottom of V upward. Volumes account for rod displacement.
                   </div>
                 </div>
 
