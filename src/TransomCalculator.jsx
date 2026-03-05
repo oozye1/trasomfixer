@@ -1075,7 +1075,7 @@ export default function TransomCalculator() {
         <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 800, color: "#f59e0b", margin: 0, letterSpacing: "-0.5px" }}>
-              TitanPour &mdash; Transom Engineering Calculator
+              Titon Pour System
             </h1>
             <p style={{ color: t("textTertiary"), fontSize: 13, margin: "4px 0 0" }}>
               Pourable composite transom system &middot; Area &amp; volume &middot; Rod spacing &middot; Mix calculator &middot; Live weather &middot; Job summary
